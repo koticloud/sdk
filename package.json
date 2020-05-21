@@ -1,0 +1,14 @@
+{
+  "name": "koti-cloud-sdk",
+  "version": "1.0.0",
+  "description": "App SDK for Koti Cloud",
+  "main": "sdk.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alexander Zavyalov <alex@voerro.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "pouchdb": "^7.2.1"
+  }
+}
