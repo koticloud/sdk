@@ -54,6 +54,16 @@ class DB
     }
 
     /**
+     * Update an existing document or create a new one if it doesn't exist.
+     * 
+     * @param {PouchDB doc}|obeject data 
+     */
+    async updateOrCreate(data) {
+        // The create method already works like update-or-create.
+        return this.create(data);
+    }
+
+    /**
      * Get a doucment by id.
      * 
      * @param {string} id 
