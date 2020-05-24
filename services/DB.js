@@ -78,10 +78,10 @@ class DB
     /**
      * Get a doucment by id.
      * 
-     * @param {string} id 
+     * @param {string}|null id 
      */
     async get(id) {
-        if (!this.isQuery) {
+        if (!this.isQuery || id) {
             return this._db.get(id.toString());
         }
 
@@ -90,10 +90,16 @@ class DB
             index: { fields: Object.keys(this.orders) }
         });
 
-        return this._db.find({
+        const res = this._db.find({
             selector: {},
             sort: this.orders,
         });
+
+        // Reset query builder
+        this.isQuery = false;
+        this.orders = [];
+
+        return res;
     }
 
     /**
@@ -108,7 +114,15 @@ class DB
     }
 
     orderBy(field, dir = 'asc') {
-        this.orders.push({ [field]: dir });
+        const exists = this.orders.find(order => {
+            return order[field];
+        });
+
+        if (exists) {
+            exists[field] = dir;
+        } else {
+            this.orders.push({ [field]: dir });
+        }
 
         this.isQuery = true;
 
