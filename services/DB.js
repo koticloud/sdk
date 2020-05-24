@@ -1,9 +1,12 @@
 import PouchDB from 'pouchdb';
+PouchDB.plugin(require('pouchdb-find').default);
 
 class DB
 {
     constructor(name) {
         this._db = new PouchDB(name);
+        this.isQuery = false;
+        this.orders = [];
     }
 
     /**
@@ -64,21 +67,52 @@ class DB
     }
 
     /**
-     * Get a doucment by id.
-     * 
-     * @param {string} id 
-     */
-    async get(id) {
-        return this._db.get(id.toString());
-    }
-
-    /**
      * (soft) Delete a document.
      * 
      * @param {PouchDB document} doc 
      */
     async remove(doc) {
         return this._db.remove(doc);
+    }
+
+    /**
+     * Get a doucment by id.
+     * 
+     * @param {string} id 
+     */
+    async get(id) {
+        if (!this.isQuery) {
+            return this._db.get(id.toString());
+        }
+
+        // Query builder
+        await this._db.createIndex({
+            index: { fields: Object.keys(this.orders) }
+        });
+
+        return this._db.find({
+            selector: {},
+            sort: this.orders,
+        });
+    }
+
+    /**
+     * Get all doucments.
+     * 
+     * @param {string} id 
+     */
+    async all(id) {
+        return this._db.allDocs({
+            include_docs: true,
+        });
+    }
+
+    orderBy(field, dir = 'asc') {
+        this.orders.push({ [field]: dir });
+
+        this.isQuery = true;
+
+        return this;
     }
 }
 
