@@ -112,13 +112,26 @@ class DB
 
     /**
      * Get all doucments.
-     * 
-     * @param {string} id 
      */
-    async all(id) {
+    async all() {
         return this._db.allDocs({
             include_docs: true,
         });
+    }
+
+    /**
+     * Get all deleted doucments.
+     */
+    async allDeleted() {
+        const res = await this._db.changes({
+            selector: { '_deleted': true },
+            include_docs: true,
+        });
+
+        // Extract docs, reverse order (newly deleted first)
+        return {
+            docs: res.results.map(item => item.doc).reverse(),
+        };
     }
 
     orderBy(field, dir = 'asc') {
