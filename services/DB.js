@@ -72,7 +72,15 @@ class DB
      * @param {PouchDB document} doc 
      */
     async remove(doc) {
-        return this._db.remove(doc);
+        // The remove() methods removes all the fields from the document. If you
+        // need those fields the official documentation recommends just setting
+        // "_deleted = true" manually.
+        // return this._db.remove(doc);
+
+        doc._deleted = true;
+        doc.deleted_at = new Date();
+
+        return this._db.put(doc);
     }
 
     /**
