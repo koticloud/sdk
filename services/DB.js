@@ -84,7 +84,7 @@ class DB
     }
 
     /**
-     * Get a doucment by id.
+     * Get a document by id or return query results.
      * 
      * @param {string}|null id 
      */
@@ -109,6 +109,25 @@ class DB
 
         return res;
     }
+
+    /**
+     * Get a deleted object by id.
+     * 
+     * @param {string} id 
+     */
+    async getDeleted(id) {
+        const res = await this._db.changes({
+            selector: { _deleted: true, _id: id },
+            include_docs: true,
+        });
+
+        if (!res.results.length) {
+            throw 'Document not found.';
+        }
+
+        return res.results[0].doc;
+    }
+
 
     /**
      * Get all doucments.
