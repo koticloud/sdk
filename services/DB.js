@@ -95,7 +95,9 @@ class DB
 
         // Query builder
         await this._db.createIndex({
-            index: { fields: Object.keys(this.orders) }
+            index: {
+                fields: this.orders.map(item => Object.keys(item)[0])
+            }
         });
 
         const res = this._db.find({
