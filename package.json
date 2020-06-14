@@ -10,6 +10,7 @@
   "license": "MIT",
   "devDependencies": {
     "pouchdb": "^7.2.1",
-    "pouchdb-find": "^7.2.1"
+    "pouchdb-find": "^7.2.1",
+    "uuid": "^8.1.0"
   }
 }
