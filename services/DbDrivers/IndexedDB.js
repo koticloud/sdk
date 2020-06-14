@@ -95,6 +95,16 @@ class IndexedDB extends DbDriver
             return null;
         }
     }
+
+    /**
+     * Get query results.
+     * 
+     * @param {object} query 
+     */
+    async get(query) {
+        // TODO: Return only trashed or non-trashed items depending on the query
+        return await this.asyncRequest(this.getStore(), 'getAll');
+    }
 }
 
 export default IndexedDB;

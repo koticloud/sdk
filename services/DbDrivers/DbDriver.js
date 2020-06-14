@@ -22,6 +22,15 @@ class DbDriver
     async getById(id) {
         return null;
     }
+
+    /**
+     * Get query results.
+     * 
+     * @param {object} query 
+     */
+    async getById(query) {
+        return null;
+    }
 }
 
 export default DbDriver;

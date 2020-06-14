@@ -133,34 +133,21 @@ class DB
     //     return this._db.put(doc);
     // }
 
-    // /**
-    //  * Get a document by id or return query results.
-    //  * 
-    //  * @param {string}|null id 
-    //  */
-    // async get(id) {
-    //     if (!this.isQuery || id) {
-    //         return this._db.get(id.toString());
-    //     }
+    /**
+     * Return query results.
+     */
+    async get() {
+        // Make sure the driver is initialized
+        await this.initDriver();
 
-    //     // Query builder
-    //     await this._db.createIndex({
-    //         index: {
-    //             fields: this.orders.map(item => Object.keys(item)[0])
-    //         }
-    //     });
+        // Call the driver method
+        const docs = await this._driver.get(this._query);
 
-    //     const res = this._db.find({
-    //         selector: {},
-    //         sort: this.orders,
-    //     });
-
-    //     // Reset query builder
-    //     this.isQuery = false;
-    //     this.orders = [];
-
-    //     return res;
-    // }
+        return {
+            docs: docs,
+            total: docs.length,
+        };
+    }
 
     // /**
     //  * Get a deleted object by id.
@@ -205,21 +192,28 @@ class DB
     //     };
     // }
 
-    // orderBy(field, dir = 'asc') {
-    //     const exists = this.orders.find(order => {
-    //         return order[field];
-    //     });
+    /**
+     * Sort query results.
+     * 
+     * @param {string} field 
+     * @param {string} dir 
+     */
+    orderBy(field, dir = 'asc') {
+        // TODO: to be implemented
+        // const exists = this.orders.find(order => {
+        //     return order[field];
+        // });
 
-    //     if (exists) {
-    //         exists[field] = dir;
-    //     } else {
-    //         this.orders.push({ [field]: dir });
-    //     }
+        // if (exists) {
+        //     exists[field] = dir;
+        // } else {
+        //     this.orders.push({ [field]: dir });
+        // }
 
-    //     this.isQuery = true;
+        // this.isQuery = true;
 
-    //     return this;
-    // }
+        return this;
+    }
 
     // /**
     //  * Sync the DB with Koti Cloud server.
