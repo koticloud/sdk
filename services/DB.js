@@ -11,10 +11,8 @@ class DB
         this._initialized = false;
 
         // Query builder
-        this._query = {
-            collection: null,
-            wheres: [],
-        };
+        this._query = {};
+        this._resetQuery();
     }
 
     /**
@@ -94,6 +92,17 @@ class DB
      * Fetch only trashed docs.
      */
     onlyTrashed() {
+        const condition = this._query.wheres.find(item => {
+            return item.field == '_deleted_at';
+        });
+
+        if (condition) {
+            condition.operator = '!=';
+            condition.value = null;
+
+            return this;
+        }
+
         return this.where('_deleted_at', '!=', null);
     }
 
@@ -103,7 +112,14 @@ class DB
     _resetQuery() {
         this._query = {
             collection: null,
-            wheres: [],
+            wheres: [
+                // By default the deleted (trashed) items are hidden
+                {
+                    field: '_deleted_at',
+                    operator: '=',
+                    value: null,
+                }
+            ],
         };
     }
 

@@ -67,26 +67,6 @@ class IndexedDB extends DbDriver
     }
 
     /**
-     * Get cursor for a store.
-     * 
-     * @param {object} store 
-     */
-    async _getCursor(store) {
-        return new Promise((resolve, reject) => {
-            const request = store.openCursor();
-
-            request.onsuccess = function () {
-                console.log('aha!');
-                resolve(request.result);
-            };
-
-            request.onerror = function () {
-                reject(request.error);
-            };
-        });
-    }
-
-    /**
      * Create a new document
      * 
      * @param {object} data 
@@ -188,7 +168,9 @@ class IndexedDB extends DbDriver
         const conditions = [];
 
         for (let where of wheres) {
-            conditions.push(`${item[where.field]} ${where.operator} ${where.value}`);
+            const operator = where.operator == '=' ? '==' : where.operator;
+
+            conditions.push(`${item[where.field]} ${operator} ${where.value}`);
         }
 
         return eval(conditions.join(' && '));
