@@ -13,14 +13,14 @@ class DB
         // Query builder
         this._query = {
             collection: null,
+            wheres: [],
         };
-        // this.orders = [];
     }
 
     /**
      * Initializ the preffered database driver
      */
-    async initDriver() {
+    async _initDriver() {
         if (this._initialized) {
             return true;
         }
@@ -46,8 +46,65 @@ class DB
     /**
      * Generate a unique ID string
      */
-    generateUniqueId() {
+    _generateUniqueId() {
         return uuidv4();
+    }
+
+    /**
+     * Add a 'where' constraint on the query.
+     * 
+     * @param {string} field 
+     * @param {string} operator 
+     * @param {mixed} value 
+     */
+    where(field, operator, value) {
+        if (value !== undefined) {
+            this._query.wheres.push({ field, operator, value });
+        } else {
+            this._query.wheres.push({ field, operator: '=', value });
+        }
+
+        return this;
+    }
+
+    /**
+     * Add an order/sort rule to the query.
+     * 
+     * @param {string} field 
+     * @param {string} dir 
+     */
+    orderBy(field, dir = 'asc') {
+        // TODO: to be implemented
+        // const exists = this.orders.find(order => {
+        //     return order[field];
+        // });
+
+        // if (exists) {
+        //     exists[field] = dir;
+        // } else {
+        //     this.orders.push({ [field]: dir });
+        // }
+
+        // this.isQuery = true;
+
+        return this;
+    }
+
+    /**
+     * Fetch only trashed docs.
+     */
+    onlyTrashed() {
+        return this.where('_deleted_at', '!=', null);
+    }
+
+    /**
+     * Reset the query (builder)
+     */
+    _resetQuery() {
+        this._query = {
+            collection: null,
+            wheres: [],
+        };
     }
 
     /**
@@ -58,12 +115,12 @@ class DB
      */
     async create(data) {
         // Make sure the driver is initialized
-        await this.initDriver();
+        await this._initDriver();
 
         // Append meta data
         data = Object.assign(data, {
             _collection: this._query.collection,
-            _id: this.generateUniqueId(),
+            _id: this._generateUniqueId(),
             _created_at: new Date(),
             _updated_at: new Date(),
             _deleted_at: null,
@@ -138,81 +195,18 @@ class DB
      */
     async get() {
         // Make sure the driver is initialized
-        await this.initDriver();
+        await this._initDriver();
 
         // Call the driver method
         const docs = await this._driver.get(this._query);
+
+        // Reset the query
+        this._resetQuery();
 
         return {
             docs: docs,
             total: docs.length,
         };
-    }
-
-    // /**
-    //  * Get a deleted object by id.
-    //  * 
-    //  * @param {string} id 
-    //  */
-    // async getDeleted(id) {
-    //     const res = await this._db.changes({
-    //         selector: { _deleted: true, _id: id },
-    //         include_docs: true,
-    //     });
-
-    //     if (!res.results.length) {
-    //         throw 'Document not found.';
-    //     }
-
-    //     return res.results[0].doc;
-    // }
-
-
-    // /**
-    //  * Get all doucments.
-    //  */
-    // async all() {
-    //     return this._db.allDocs({
-    //         include_docs: true,
-    //     });
-    // }
-
-    // /**
-    //  * Get all deleted doucments.
-    //  */
-    // async allDeleted() {
-    //     const res = await this._db.changes({
-    //         selector: { '_deleted': true },
-    //         include_docs: true,
-    //     });
-
-    //     // Extract docs, reverse order (newly deleted first)
-    //     return {
-    //         docs: res.results.map(item => item.doc).reverse(),
-    //     };
-    // }
-
-    /**
-     * Sort query results.
-     * 
-     * @param {string} field 
-     * @param {string} dir 
-     */
-    orderBy(field, dir = 'asc') {
-        // TODO: to be implemented
-        // const exists = this.orders.find(order => {
-        //     return order[field];
-        // });
-
-        // if (exists) {
-        //     exists[field] = dir;
-        // } else {
-        //     this.orders.push({ [field]: dir });
-        // }
-
-        // this.isQuery = true;
-
-        return this;
     }
 
     // /**

@@ -28,8 +28,8 @@ class DbDriver
      * 
      * @param {object} query 
      */
-    async getById(query) {
-        return null;
+    async get(query) {
+        return [];
     }
 }
 

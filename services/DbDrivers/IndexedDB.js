@@ -41,7 +41,7 @@ class IndexedDB extends DbDriver
      * @param {string} method 
      * @param {mixed} argument 
      */
-    async asyncRequest(object, method, argument) {
+    async _asyncRequest(object, method, argument) {
         return new Promise((resolve, reject) => {
             const request = object[method](argument);
 
@@ -60,10 +60,30 @@ class IndexedDB extends DbDriver
      * 
      * @param {string} mode 
      */
-    getStore(mode = 'readonly') {
+    _getStore(mode = 'readonly') {
         const transaction = this._db.transaction(this._storeName, mode);
 
         return transaction.objectStore(this._storeName);
+    }
+
+    /**
+     * Get cursor for a store.
+     * 
+     * @param {object} store 
+     */
+    async _getCursor(store) {
+        return new Promise((resolve, reject) => {
+            const request = store.openCursor();
+
+            request.onsuccess = function () {
+                console.log('aha!');
+                resolve(request.result);
+            };
+
+            request.onerror = function () {
+                reject(request.error);
+            };
+        });
     }
 
     /**
@@ -73,8 +93,8 @@ class IndexedDB extends DbDriver
      */
     async create(data) {
         // Create a new object, get its ID
-        const id = await this.asyncRequest(
-            this.getStore('readwrite'),
+        const id = await this._asyncRequest(
+            this._getStore('readwrite'),
             'add',
             data
         );
@@ -89,11 +109,15 @@ class IndexedDB extends DbDriver
      * @param {string} id 
      */
     async getById(id) {
+        let item = null;
+
         try {
-            const item = await this.asyncRequest(this.getStore(), 'get', id);
+            item = await this._asyncRequest(this._getStore(), 'get', id);
         } catch (error) {
             return null;
         }
+
+        return item;
     }
 
     /**
@@ -102,8 +126,72 @@ class IndexedDB extends DbDriver
      * @param {object} query 
      */
     async get(query) {
-        // TODO: Return only trashed or non-trashed items depending on the query
-        return await this.asyncRequest(this.getStore(), 'getAll');
+        return new Promise((resolve, reject) => {
+            const store = this._getStore();
+
+            const results = [];
+
+            // NOTE: this is left in case I want to implement pagination
+            // const request = store.openCursor(IDBKeyRange.bound(skip, skip + take))
+            const request = store.openCursor()
+
+            request.onsuccess = (e) => {
+                var cursor = e.target.result;
+
+                if (cursor) {
+                    // Filter out the results from foreign collections
+                    if (cursor.value._collection != query.collection) {
+                        cursor.continue();
+
+                        return;
+                    }
+
+                    // Filter our the results that don't pass all the WHERE
+                    // conditions
+                    if (!this._queryWhere(cursor.value, query.wheres)) {
+                        cursor.continue();
+
+                        return;
+                    }
+
+                    results.push(cursor.value);
+
+                    cursor.continue();
+                }
+
+                resolve(results);
+            }
+
+            request.onerror = function (e) {
+                if (e.type === 'success') {
+                    resolve(results);
+                } else {
+                    reject(e.target.error);
+                }
+            };
+        });
+    }
+
+    /**
+     * Does the item pass the WHERE conditions?
+     * 
+     * @param {object} item 
+     * @param {array} wheres 
+     */
+    _queryWhere(item, wheres) {
+        if (!wheres || !wheres.length) {
+            return true;
+        }
+
+        // TODO: For now all the WHEREs are joined via AND, which is too simple.
+        // Add the ability to add OR and groupped subconditions like in Eloquent
+        const conditions = [];
+
+        for (let where of wheres) {
+            conditions.push(`${item[where.field]} ${where.operator} ${where.value}`);
+        }
+
+        return eval(conditions.join(' && '));
     }
 }
 
