@@ -3,7 +3,7 @@ import IndexedDB from './DbDrivers/IndexedDB';
 
 class DB
 {
-    constructor(name, driver = 'indexedDb') {
+    constructor(name, driver = 'indexedDb', collection = null) {
         // The database
         this._dbName = `koti_cloud_${name}`;
         this._driverName = driver;
@@ -11,7 +11,9 @@ class DB
         this._initialized = false;
 
         // Query builder
-        this._query = {};
+        this._query = {
+            collection: collection,
+        };
         this._resetQuery();
     }
 
@@ -31,14 +33,15 @@ class DB
     }
 
     /**
-     * Select a data collection to work on.
+     * Initialize a query on a DB collection.
      * 
      * @param {string} name 
      */
     collection(name) {
-        this._query.collection = name;
-
-        return this;
+        const dbName = this._dbName.replace('koti_cloud_', '');
+        
+        // Return a new DB object so that all queries are totally isolated
+        return new DB(dbName, this._driverName , name);
     }
 
     /**
@@ -107,11 +110,29 @@ class DB
     }
 
     /**
+     * Fetch both trashed and non-trashed docs.
+     */
+    withTrashed() {
+        // Find the _deleted_at WHERE if any and remove it
+        const condition = this._query.wheres.find(item => {
+            return item.field == '_deleted_at';
+        });
+        
+        if (!condition) {
+            return this;
+        }
+
+        this._query.wheres.splice(this._query.wheres.indexOf(condition), 1);
+
+        return this;
+    }
+
+    /**
      * Reset the query (builder)
      */
     _resetQuery() {
         this._query = {
-            collection: null,
+            collection: this._query.collection,
             wheres: [
                 // By default the deleted (trashed) items are hidden
                 {
@@ -121,6 +142,13 @@ class DB
                 }
             ],
         };
+    }
+
+    /**
+     * Get the current timestamp.
+     */
+    _now() {
+        return Math.floor((new Date()).getTime() / 1000);
     }
 
     /**
@@ -137,8 +165,8 @@ class DB
         data = Object.assign(data, {
             _collection: this._query.collection,
             _id: this._generateUniqueId(),
-            _created_at: new Date(),
-            _updated_at: new Date(),
+            _created_at: this._now(),
+            _updated_at: this._now(),
             _deleted_at: null,
         });
 
@@ -189,22 +217,22 @@ class DB
     //     return this.create(data);
     // }
 
-    // /**
-    //  * (soft) Delete a document.
-    //  * 
-    //  * @param {PouchDB document} doc 
-    //  */
-    // async remove(doc) {
-    //     // The remove() methods removes all the fields from the document. If you
-    //     // need those fields the official documentation recommends just setting
-    //     // "_deleted = true" manually.
-    //     // return this._db.remove(doc);
+    /**
+     * (soft) delete a document.
+     * 
+     * @param {object} doc 
+     */
+    async delete(doc) {
+        // Make sure the driver is initialized
+        await this._initDriver();
 
-    //     doc._deleted = true;
-    //     doc.deleted_at = new Date();
+        // Update the document object
+        doc._deleted_at = this._now();
+        doc._updated_at = this._now();
 
-    //     return this._db.put(doc);
-    // }
+        // Call the driver method
+        return await this._driver.update(doc);
+    }
 
     /**
      * Return query results.
@@ -235,9 +263,9 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        const item = await this._driver.getById(id);
+        const doc = await this._driver.getById(id);
 
-        if (!item) {
+        if (!doc) {
             throw {
                 status: 404,
                 reason: 'notfound',
@@ -254,21 +282,26 @@ class DB
                 ? '=='
                 : condition.operator;
 
-            condition = `${item[condition.field]} ${operator} ${condition.value}`;
+            condition = `${doc[condition.field]} ${operator} ${condition.value}`;
             
             if (!eval(condition)) {
-                if (operator == '!=' && condition.value == null) {
+                if (operator == '==' && condition.value == null) {
                     throw {
                         status: 404,
                         reason: 'deleted',
                     }
                 }
 
-                return null;
+                throw {
+                    status: 404,
+                }
             }
         }
+
+        // Reset the query
+        this._resetQuery();
         
-        return item;
+        return doc;
     }
 
     // /**
