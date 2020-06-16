@@ -174,48 +174,35 @@ class DB
         return await this._driver.create(data);
     }
 
-    // /**
-    //  * Create a new document if it doesn't exist. Return the document if it does
-    //  * exist.
-    //  * object is not unique.
-    //  * 
-    //  * @param {object} data 
-    //  */
-    // async firstOrCreate(data) {
-    //     let doc;
+    /**
+     * Update an existing document.
+     * 
+     * @param {PouchDB doc} doc 
+     */
+    async update(doc) {
+        // Make sure the driver is initialized
+        await this._initDriver();
 
-    //     try {
-    //         doc = await this._db.get(data._id);
+        // Update the document's timestamps
+        doc._updated_at = this._now();
 
-    //         return doc;
-    //     } catch (error) {
-    //         // Document doesn't exist
-    //     }
+        // Call the driver method
+        return await this._driver.update(doc);
+    }
 
-    //     // Create a document
-    //     return this.create(data);
-    // }
+    /**
+     * Update an existing document or create a new one if it doesn't exist.
+     * 
+     * @param {PouchDB doc}|obeject data 
+     */
+    async updateOrCreate(doc) {
+        // Make sure the driver is initialized
+        await this._initDriver();
 
-    // /**
-    //  * Update an existing document.
-    //  * 
-    //  * @param {PouchDB doc} doc 
-    //  */
-    // async update(doc) {
-    //     await this._db.put(doc);
-
-    //     return this.get(doc._id);
-    // }
-
-    // /**
-    //  * Update an existing document or create a new one if it doesn't exist.
-    //  * 
-    //  * @param {PouchDB doc}|obeject data 
-    //  */
-    // async updateOrCreate(data) {
-    //     // The create method already works like update-or-create.
-    //     return this.create(data);
-    // }
+        return (doc._id && doc._created_at)
+            ? await this.update(doc)
+            : await this.create(doc);
+    }
 
     /**
      * (soft) delete a document.

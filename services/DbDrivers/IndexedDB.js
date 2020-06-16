@@ -84,19 +84,19 @@ class IndexedDB extends DbDriver
     }
 
     /**
-     * Update an existing document
+     * Update an existing document.
      * 
      * @param {object} doc 
      */
     async update(doc) {
-        // Create a new object, get its ID
+        // Update an existing object
         await this._asyncRequest(
             this._getStore('readwrite'),
             'put',
             doc
         );
 
-        // Return the newly created object
+        // Return the updated object
         return doc;
     }
 
