@@ -225,6 +225,52 @@ class DB
         };
     }
 
+    /**
+     * Get a document by id.
+     * 
+     * @param {string} id 
+     */
+    async getById(id) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Call the driver method
+        const item = await this._driver.getById(id);
+
+        if (!item) {
+            throw {
+                status: 404,
+                reason: 'notfound',
+            }
+        }
+
+        // Apply the trahsed/soft delete WHERE condition if any
+        let condition = this._query.wheres.find(item => {
+            return item.field === '_deleted_at';
+        });
+
+        if (condition) {
+            const operator = condition.operator === '='
+                ? '=='
+                : condition.operator;
+
+            condition = `${item[condition.field]} ${operator} ${condition.value}`;
+            
+            if (!eval(condition)) {
+                if (operator == '!=' && condition.value == null) {
+                    throw {
+                        status: 404,
+                        reason: 'deleted',
+                    }
+                }
+
+                return null;
+            }
+        }
+        
+        return item;
+    }
+
     // /**
     //  * Sync the DB with Koti Cloud server.
     //  */
