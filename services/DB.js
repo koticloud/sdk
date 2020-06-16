@@ -75,18 +75,15 @@ class DB
      * @param {string} dir 
      */
     orderBy(field, dir = 'asc') {
-        // TODO: to be implemented
-        // const exists = this.orders.find(order => {
-        //     return order[field];
-        // });
+        const exists = this._query.orders.find(order => {
+            return order[field];
+        });
 
-        // if (exists) {
-        //     exists[field] = dir;
-        // } else {
-        //     this.orders.push({ [field]: dir });
-        // }
-
-        // this.isQuery = true;
+        if (exists) {
+            exists[field] = dir;
+        } else {
+            this._query.orders.push({ [field]: dir });
+        }
 
         return this;
     }
@@ -141,6 +138,7 @@ class DB
                     value: null,
                 }
             ],
+            orders: [],
         };
     }
 

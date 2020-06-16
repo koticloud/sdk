@@ -126,7 +126,7 @@ class IndexedDB extends DbDriver
         return new Promise((resolve, reject) => {
             const store = this._getStore();
 
-            const results = [];
+            let results = [];
 
             // NOTE: this is left in case I want to implement pagination
             // const request = store.openCursor(IDBKeyRange.bound(skip, skip + take))
@@ -154,6 +154,11 @@ class IndexedDB extends DbDriver
                     results.push(cursor.value);
 
                     cursor.continue();
+                } else {    // No more items
+                    // Sort the results to collect
+                    if (query.orders.length) {
+                        results = results.sort(this._sortFunction(query.orders));
+                    }
                 }
 
                 resolve(results);
@@ -191,6 +196,44 @@ class IndexedDB extends DbDriver
         }
 
         return eval(conditions.join(' && '));
+    }
+
+    /**
+     * Array sorting function for query results.
+     * 
+     * @param {object} a 
+     * @param {object} b 
+     */
+    _sortFunction(orders, i = 0) {
+        const order = orders[i];
+        const field = Object.keys(order)[0];
+        const sortAsc = order[field] === 'asc';
+
+        // Sort by multiple fields
+        return (a, b) => {
+            if (!a[field]) {
+                return sortAsc ? -1 : 1;
+            }
+
+            if (!b[field]) {
+                return sortAsc ? 1 : -1;
+            }
+
+            if (a[field] < b[field]) {
+                return sortAsc ? -1 : 1;
+            }
+
+            if (a[field] > b[field]) {
+                return sortAsc ? 1 : -1;
+            }
+
+            // If the values are similar - sort by the next field if any
+            if (orders[i + 1] !== undefined && orders[i + 1] !== null) {
+                return this._sortFunction(orders, i + 1)(a, b);
+            }
+
+            return 0;
+        }
     }
 }
 
