@@ -289,20 +289,22 @@ class DB
         return doc;
     }
 
-    // /**
-    //  * Sync the DB with Koti Cloud server.
-    //  */
-    // async sync() {
-    //     const hostParts = location.host.split('.');
-    //     const host = `${location.protocol}//${hostParts[hostParts.length - 2]}.${hostParts[hostParts.length - 1]}`;
+    /**
+     * Sync the DB with Koti Cloud server.
+     */
+    async sync() {
+        // TODO: To be implemented
+        return true;
+        // const hostParts = location.host.split('.');
+        // const host = `${location.protocol}//${hostParts[hostParts.length - 2]}.${hostParts[hostParts.length - 1]}`;
 
-    //     const remoteDb = new DB(`${host}/api/i/app-user-db/sync/db/`);
+        // const remoteDb = new DB(`${host}/api/i/app-user-db/sync/db/`);
 
-    //     return this._db.sync(remoteDb._db, {
-    //         // live: true,
-    //         // retry: true
-    //     });
-    // }
+        // return this._db.sync(remoteDb._db, {
+        //     // live: true,
+        //     // retry: true
+        // });
+    }
 }
 
 export default DB;
