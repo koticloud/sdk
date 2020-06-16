@@ -105,12 +105,17 @@ class IndexedDB extends DbDriver
      * 
      * @param {string} id 
      */
-    async getById(id) {
+    async getById(id, query = null) {
         let item = null;
 
         try {
             item = await this._asyncRequest(this._getStore(), 'get', id);
         } catch (error) {
+            return null;
+        }
+
+        // Filter our the itme if it doesn't pass all the WHERE conditions
+        if (query && !this._queryWhere(item, query.wheres)) {
             return null;
         }
 

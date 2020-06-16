@@ -248,38 +248,12 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        const doc = await this._driver.getById(id);
+        const doc = await this._driver.getById(id, this._query);
 
         if (!doc) {
             throw {
                 status: 404,
-                reason: 'notfound',
-            }
-        }
-
-        // Apply the trahsed/soft delete WHERE condition if any
-        let condition = this._query.wheres.find(item => {
-            return item.field === '_deleted_at';
-        });
-
-        if (condition) {
-            const operator = condition.operator === '='
-                ? '=='
-                : condition.operator;
-
-            condition = `${doc[condition.field]} ${operator} ${condition.value}`;
-            
-            if (!eval(condition)) {
-                if (operator == '==' && condition.value == null) {
-                    throw {
-                        status: 404,
-                        reason: 'deleted',
-                    }
-                }
-
-                throw {
-                    status: 404,
-                }
+                message: 'not found',
             }
         }
 
