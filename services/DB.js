@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import IndexedDB from './DbDrivers/IndexedDB';
+import diff_match_patch from 'diff-match-patch';
 
 class DB
 {
@@ -15,6 +16,14 @@ class DB
             collection: collection,
         };
         this._resetQuery();
+
+        this._revActions = {
+            create: 'create',
+            edit: 'edit',
+            delete: 'delete',
+        };
+
+        this._dmp = new diff_match_patch();
     }
 
     /**
@@ -166,7 +175,11 @@ class DB
             _created_at: this._now(),
             _updated_at: this._now(),
             _deleted_at: null,
+            _revs: [],
         });
+
+        // Add a revision
+        data._revs.push(this._makeRevision(this._revActions.create, {}, data));
 
         // Call the driver method
         return await this._driver.create(data);
@@ -181,8 +194,14 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
+        // Original data before changes were made
+        const before = await this.getById(doc._id);
+
         // Update the document's timestamps
         doc._updated_at = this._now();
+
+        // Add a revision
+        doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -211,9 +230,15 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
+        // Original data before changes were made
+        const before = await this.getById(doc._id);
+
         // Update the document object
         doc._deleted_at = this._now();
         doc._updated_at = this._now();
+
+        // Add a revision
+        doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -261,6 +286,58 @@ class DB
         this._resetQuery();
         
         return doc;
+    }
+
+    /**
+     * Make a revision for a document
+     * 
+     * @param {string} action 
+     * @param {object} before 
+     * @param {object} after 
+     */
+    _makeRevision(action, before, after) {
+        const ordinalNumber = before.hasOwnProperty('_revs')
+            ? before._revs.length + 1
+            : 1;
+        
+        // Make clones of the objects
+        before = Object.assign({}, before);
+        after = Object.assign({}, after);
+        
+        // Remove rev history from the data
+        delete before._revs;
+        delete after._revs;
+
+        // Figure out the differences between the two documents
+        let diff = '';
+
+        switch (action) {
+            case this._revActions.create:
+                diff = [
+                    // "Add chars" action
+                    [1, JSON.stringify(after)]
+                ];
+
+                break;
+            case this._revActions.delete:
+                // We don't need any specific changes for deleted objects
+                diff = [];
+
+                break;
+            default:
+                diff = this._dmp.diff_main(
+                    JSON.stringify(before),
+                    JSON.stringify(after)
+                );
+        }
+
+        return {
+            id: this._generateUniqueId(),
+            order: ordinalNumber,
+            action: action,
+            synced: false,
+            diff: diff,
+        };
     }
 
     /**
