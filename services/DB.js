@@ -300,35 +300,46 @@ class DB
             ? before._revs.length + 1
             : 1;
         
-        // Make clones of the objects
-        before = Object.assign({}, before);
-        after = Object.assign({}, after);
-        
-        // Remove rev history from the data
-        delete before._revs;
-        delete after._revs;
+        // Figure our the list of common fields
+        let fields = Object.assign({}, before, after);
+
+        // Remove the special fields form the list
+        delete fields._id;
+        delete fields._collection;
+        delete fields._revs;
+
+        // Field names
+        fields = Object.keys(fields);
 
         // Figure out the differences between the two documents
-        let diff = '';
+        let diff = [];
 
+        // Figure our the difference for each field
         switch (action) {
-            case this._revActions.create:
-                diff = [
-                    // "Add chars" action
-                    [1, JSON.stringify(after)]
-                ];
-
-                break;
             case this._revActions.delete:
                 // We don't need any specific changes for deleted objects
                 diff = [];
 
                 break;
             default:
-                diff = this._dmp.diff_main(
-                    JSON.stringify(before),
-                    JSON.stringify(after)
-                );
+                for (let field of fields) {
+                    if (before[field] === undefined) {
+                        diff[field] = [
+                            // A single "Add chars" action
+                            [1, after[field]]
+                        ];
+                    } else if (after[field] === undefined) {
+                        diff[field] = [
+                            // A single "Remove chars" action
+                            [0, before[field]]
+                        ];
+                    } else {
+                        diff[field] = this._dmp.diff_main(
+                            JSON.stringify(before[field]),
+                            JSON.stringify(after[field])
+                        );
+                    }
+                }
         }
 
         return {
