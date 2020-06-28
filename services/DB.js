@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import IndexedDB from './DbDrivers/IndexedDB';
 import diff_match_patch from 'diff-match-patch';
+import axios from 'axios';
 
 class DB
 {
@@ -186,6 +187,20 @@ class DB
     }
 
     /**
+     * Store a new document as is. Throws an exception if the id inside the data
+     * object is not unique.
+     * 
+     * @param {object} data 
+     */
+    async store(data) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Call the driver method
+        return await this._driver.create(data);
+    }
+
+    /**
      * Update an existing document.
      * 
      * @param {PouchDB doc} doc 
@@ -312,13 +327,18 @@ class DB
         fields = Object.keys(fields);
 
         // Figure out the differences between the two documents
-        let diff = [];
+        let diff = {};
 
         // Figure our the difference for each field
         switch (action) {
             case this._revActions.delete:
-                // We don't need any specific changes for deleted objects
-                diff = [];
+                // We don't need any specific changes for deleted objects, except
+                // for the _deleted_at timestamp
+                diff = {
+                    _deleted_at: [
+                        [1, this._now()],
+                    ],
+                };
 
                 break;
             default:
@@ -346,7 +366,6 @@ class DB
             id: this._generateUniqueId(),
             order: ordinalNumber,
             action: action,
-            synced: false,
             diff: diff,
         };
     }
@@ -355,17 +374,115 @@ class DB
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
-        // TODO: To be implemented
+        // Get the list of all the local docs
+        const allDocs = await this.collection(null).withTrashed().get();
+
+        const diffs = await this.syncGetDiffs(allDocs);
+
+        // Upload changes to the server. Let exceptions through to prevent the
+        // further download operation in case of an error.
+        await this.syncUploadChanges(allDocs, diffs.upload);
+
+        // Download changes from the server if the upload was successful
+        await this.syncDownloadChanges(allDocs, diffs.download);
+
         return true;
-        // const hostParts = location.host.split('.');
-        // const host = `${location.protocol}//${hostParts[hostParts.length - 2]}.${hostParts[hostParts.length - 1]}`;
+    }
 
-        // const remoteDb = new DB(`${host}/api/i/app-user-db/sync/db/`);
+    /**
+     * Get differences between the local and the remote Koti Cloud DBs.
+     */
+    async syncGetDiffs(allDocs) {
+        // NOTE: Ignoring the exceptions here
+        const revs = [];
 
-        // return this._db.sync(remoteDb._db, {
-        //     // live: true,
-        //     // retry: true
-        // });
+        for (let doc of allDocs.docs) {
+            for (let rev of doc._revs) {
+                revs.push({
+                    doc_id: doc._id,
+                    rev_id: rev.id,
+                });
+            }
+        }
+
+        const response = await axios.post('/api/i/app-user-db/sync/diff', {
+            revs: revs,
+        });
+
+        return response.data;
+    }
+
+    /**
+     * Get differences between the local and the remote Koti Cloud DBs.
+     */
+    async syncUploadChanges(allDocs, upload) {
+        if (!Object.keys(upload).length) {
+            return true;
+        }
+
+        // NOTE: Ignoring the exceptions here
+        // Prepare the data
+        const docs = {};
+
+        for (let doc of allDocs.docs) {
+            if (upload[doc._id] !== undefined) {
+                docs[doc._id] = doc;
+                // console.log(docs[doc._id]._revs);
+
+                docs[doc._id]._revs = docs[doc._id]._revs.filter(item => {
+                    return upload[doc._id].indexOf(item.id) > -1;
+                });
+            }
+        }
+
+        await axios.post('/api/i/app-user-db/sync/upload', {
+            docs: docs,
+        });
+
+        return true;
+    }
+ 
+    /**
+     * Get differences between the local and the remote Koti Cloud DBs.
+     */
+    async syncDownloadChanges(allDocs, download) {
+        if (!Object.keys(download).length) {
+            return true;
+        }
+
+        const response = await axios.post('/api/i/app-user-db/sync/download', {
+            docs: download,
+        });
+
+        const docs = response.data.docs;
+
+        // Create/update local docs
+        for (let docId of Object.keys(docs)) {
+            const data = docs[docId];
+
+            data._revs = data._revs.map(revItem => {
+                revItem.diff = JSON.parse(revItem.diff);
+
+                return revItem;
+            });
+
+            // Convert the special fields
+            data._created_at = data._created_at ? data._created_at : null;
+            data._updated_at = data._updated_at ? data._updated_at : null;
+            data._deleted_at = data._deleted_at ? data._deleted_at : null;
+
+            try {
+                // If the doc exists - update it
+                const doc = await this.getById(docId);
+
+                // TODO:
+            } catch (error) {
+                // Otherwise store a new doc
+                await this.store(data);
+            }
+        }
+
+        return true;
     }
 }
 

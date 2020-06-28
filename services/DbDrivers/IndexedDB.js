@@ -142,7 +142,7 @@ class IndexedDB extends DbDriver
 
                 if (cursor) {
                     // Filter out the results from foreign collections
-                    if (cursor.value._collection != query.collection) {
+                    if (query.collection && cursor.value._collection != query.collection) {
                         cursor.continue();
 
                         return;
@@ -159,6 +159,8 @@ class IndexedDB extends DbDriver
                     results.push(cursor.value);
 
                     cursor.continue();
+
+                    return;
                 } else {    // No more items
                     // Sort the results to collect
                     if (query.orders.length) {
@@ -196,8 +198,9 @@ class IndexedDB extends DbDriver
 
         for (let where of wheres) {
             const operator = where.operator == '=' ? '==' : where.operator;
+            let value = item[where.field];
 
-            conditions.push(`${item[where.field]} ${operator} ${where.value}`);
+            conditions.push(`${value} ${operator} ${where.value}`);
         }
 
         return eval(conditions.join(' && '));

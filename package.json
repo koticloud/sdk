@@ -9,9 +9,8 @@
   "author": "Alexander Zavyalov <alex@voerro.com>",
   "license": "MIT",
   "devDependencies": {
+    "axios": "^0.19.2",
     "diff-match-patch": "^1.0.5",
-    "pouchdb": "^7.2.1",
-    "pouchdb-find": "^7.2.1",
     "uuid": "^8.1.0"
   }
 }
