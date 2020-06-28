@@ -205,7 +205,7 @@ class DB
      * 
      * @param {PouchDB doc} doc 
      */
-    async update(doc) {
+    async update(doc, makeRevision = true) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -216,7 +216,9 @@ class DB
         doc._updated_at = this._now();
 
         // Add a revision
-        doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
+        if (makeRevision) {
+            doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
+        }
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -354,9 +356,17 @@ class DB
                             [0, before[field]]
                         ];
                     } else {
+                        const beforeVal = (typeof before[field] === 'string')
+                            ? before[field]
+                            : JSON.stringify(before[field]);
+
+                        const afterVal = (typeof after[field] === 'string')
+                            ? after[field]
+                            : JSON.stringify(after[field]);
+
                         diff[field] = this._dmp.diff_main(
-                            JSON.stringify(before[field]),
-                            JSON.stringify(after[field])
+                            beforeVal,
+                            afterVal
                         );
                     }
                 }
@@ -383,7 +393,19 @@ class DB
         // further download operation in case of an error.
         await this.syncUploadChanges(allDocs, diffs.upload);
 
-        // Download changes from the server if the upload was successful
+        // Re-download the just uploaded docs, because patching is done on the
+        // server and we can't predict the final results, especially since there
+        // might be conflicts
+        const redownload = {};
+
+        for (let docId of Object.keys(diffs.upload)) {
+            redownload[docId] = [];
+        }
+
+        await this.syncDownloadChanges(allDocs, redownload);
+
+        // Download the missing changes from the server if the upload was
+        // successful
         await this.syncDownloadChanges(allDocs, diffs.download);
 
         return true;
@@ -427,10 +449,17 @@ class DB
         for (let doc of allDocs.docs) {
             if (upload[doc._id] !== undefined) {
                 docs[doc._id] = doc;
-                // console.log(docs[doc._id]._revs);
 
                 docs[doc._id]._revs = docs[doc._id]._revs.filter(item => {
                     return upload[doc._id].indexOf(item.id) > -1;
+                });
+
+                // Stringify revs' diffs, otherwise certain chars and some
+                // spaces get lost when the data is sent to the server
+                docs[doc._id]._revs = docs[doc._id]._revs.map(item => {
+                    item.diff = JSON.stringify(item.diff);
+
+                    return item;
                 });
             }
         }
@@ -473,9 +502,22 @@ class DB
 
             try {
                 // If the doc exists - update it
-                const doc = await this.getById(docId);
+                let doc = await this.getById(docId);
 
-                // TODO:
+                // Update the doc data
+                const missingRevs = data._revs;
+                delete data._revs;
+
+                doc = Object.assign(doc, data);
+
+                // Add the new revs
+                for (let rev of missingRevs) {
+                    doc._revs.push(rev);
+                }
+
+                // Persist the changes without creating new revisions in the
+                // process
+                this.update(doc, false);
             } catch (error) {
                 // Otherwise store a new doc
                 await this.store(data);
