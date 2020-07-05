@@ -265,6 +265,30 @@ class DB
     }
 
     /**
+     * Purge (hard-delete) a document.
+     * 
+     * @param {object} doc 
+     */
+    async delete(doc) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Original data before changes were made
+        const before = await this.withTrashed().getById(doc._id);
+
+        // Update the document object
+        doc._deleted_at = this._now();
+        doc._updated_at = this._now();
+        doc._purged = 1;
+
+        // Add a revision
+        doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
+
+        // Call the driver method
+        return await this._driver.update(doc);
+    }
+
+    /**
      * Restore a trashed (soft-deleted) document.
      * 
      * @param {object} doc 
@@ -307,6 +331,25 @@ class DB
     }
 
     /**
+     * Get ALL existing docs, including the trashed and purged/deleted ones.
+     */
+    async getAll() {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Call the driver method
+        const docs = await this._driver.getAll();
+
+        // Reset the query
+        this._resetQuery();
+
+        return {
+            docs: docs,
+            total: docs.length,
+        };
+    }
+
+    /**
      * Get a document by id.
      * 
      * @param {string} id 
@@ -329,6 +372,21 @@ class DB
         this._resetQuery();
         
         return doc;
+    }
+
+    /**
+     * Delete a documents by id.
+     * 
+     * @param {string} id
+     */
+    async deleteById(id) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Call the driver method
+        await this._driver.deleteById(id);
+
+        return true;
     }
 
     /**
@@ -360,8 +418,8 @@ class DB
         // Figure our the difference for each field
         switch (action) {
             case this._revActions.trash:
-                // We don't need any specific changes for deleted objects, except
-                // for the _deleted_at timestamp
+                // We don't need any specific changes for trashed objects,
+                // except for the _deleted_at timestamp
                 diff = {
                     _deleted_at: [
                         [1, this._now()],
@@ -377,6 +435,12 @@ class DB
                         [-1, before._deleted_at],
                     ],
                 };
+
+                break;
+            case this._revActions.delete:
+                // We don't need any specific changes for deleted objects,
+                // since all its revs and data will be deleted on the server
+                diff = {};
 
                 break;
             default:
@@ -421,7 +485,7 @@ class DB
      */
     async sync() {
         // Get the list of all the local docs
-        const allDocs = await this.collection(null).withTrashed().get();
+        const allDocs = await this.getAll();
 
         const diffs = await this.syncGetDiffs(allDocs);
 
@@ -438,11 +502,14 @@ class DB
             redownload[docId] = [];
         }
 
-        await this.syncDownloadChanges(allDocs, redownload);
+        await this.syncDownloadChanges(redownload);
 
         // Download the missing changes from the server if the upload was
         // successful
-        await this.syncDownloadChanges(allDocs, diffs.download);
+        await this.syncDownloadChanges(diffs.download);
+
+        // Delete the docs that were purged/deleted from the server
+        await this.syncDeletePurged(diffs.deleted);
 
         return true;
     }
@@ -510,7 +577,7 @@ class DB
     /**
      * Get differences between the local and the remote Koti Cloud DBs.
      */
-    async syncDownloadChanges(allDocs, download) {
+    async syncDownloadChanges(download) {
         if (!Object.keys(download).length) {
             return true;
         }
@@ -535,8 +602,8 @@ class DB
             data._created_at = data._created_at ? data._created_at : null;
             data._updated_at = data._updated_at ? data._updated_at : null;
             data._deleted_at = data._deleted_at ? data._deleted_at : null;
-            data._purged = data._purged !== undefined
-                ? parseInt(data._purged)
+            data._purged = (data._purged === 0 || data._purged === 1 || data._purged === '0' || data._purged === '1')
+                ? data._purged
                 : 0;
 
             try {
@@ -561,6 +628,21 @@ class DB
                 // Otherwise store a new doc
                 await this.store(data);
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Delete the docs that were purged/deleted from the server
+     */
+    async syncDeletePurged(deleted) {
+        if (!Object.keys(deleted).length) {
+            return true;
+        }
+
+        for (let id of deleted) {
+            await this.deleteById(id);
         }
 
         return true;

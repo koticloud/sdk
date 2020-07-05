@@ -114,6 +114,11 @@ class IndexedDB extends DbDriver
             return null;
         }
 
+        // Don't return purged (hard-deleted) items
+        if (item._purged === 1 || item._purged === '1') {
+            return null;
+        }
+
         // Filter out the item if it doesn't pass all the WHERE conditions
         if (query && !this._queryWhere(item, query.wheres)) {
             return null;
@@ -143,6 +148,13 @@ class IndexedDB extends DbDriver
                 if (cursor) {
                     // Filter out the results from foreign collections
                     if (query.collection && cursor.value._collection != query.collection) {
+                        cursor.continue();
+
+                        return;
+                    }
+
+                    // Ignore purged (hard-deleted) results
+                    if (cursor.value._purged === 1 || cursor.value._purged === '1') {
                         cursor.continue();
 
                         return;
@@ -179,6 +191,22 @@ class IndexedDB extends DbDriver
                 }
             };
         });
+    }
+
+    /**
+     * Delete a record by id
+     * 
+     * @param {string} ids
+     */
+    async deleteById(id) {
+        return await this._asyncRequest(this._getStore('readwrite'), 'delete', id);
+    }
+
+    /**
+     * Get ALL existing docs, including the trashed and purged/deleted ones.
+     */
+    async getAll() {
+        return await this._asyncRequest(this._getStore(), 'getAll');
     }
 
     /**
