@@ -114,7 +114,7 @@ class IndexedDB extends DbDriver
             return null;
         }
 
-        // Filter our the itme if it doesn't pass all the WHERE conditions
+        // Filter out the item if it doesn't pass all the WHERE conditions
         if (query && !this._queryWhere(item, query.wheres)) {
             return null;
         }

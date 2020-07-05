@@ -21,6 +21,8 @@ class DB
         this._revActions = {
             create: 'create',
             edit: 'edit',
+            trash: 'trash',
+            restore: 'restore',
             delete: 'delete',
         };
 
@@ -176,6 +178,7 @@ class DB
             _created_at: this._now(),
             _updated_at: this._now(),
             _deleted_at: null,
+            _purged: 0,
             _revs: [],
         });
 
@@ -210,7 +213,7 @@ class DB
         await this._initDriver();
 
         // Original data before changes were made
-        const before = await this.getById(doc._id);
+        const before = await this.withTrashed().getById(doc._id);
 
         // Update the document's timestamps
         doc._updated_at = this._now();
@@ -239,11 +242,11 @@ class DB
     }
 
     /**
-     * (soft) delete a document.
+     * Trash (soft-delete) a document.
      * 
      * @param {object} doc 
      */
-    async delete(doc) {
+    async trash(doc) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -255,7 +258,30 @@ class DB
         doc._updated_at = this._now();
 
         // Add a revision
-        doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
+        doc._revs.push(this._makeRevision(this._revActions.trash, before, doc));
+
+        // Call the driver method
+        return await this._driver.update(doc);
+    }
+
+    /**
+     * Restore a trashed (soft-deleted) document.
+     * 
+     * @param {object} doc 
+     */
+    async restore(doc) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Original data before changes were made
+        const before = await this.withTrashed().getById(doc._id);
+
+        // Update the document object
+        doc._deleted_at = null;
+        doc._updated_at = this._now();
+
+        // Add a revision
+        doc._revs.push(this._makeRevision(this._revActions.restore, before, doc));
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -333,12 +359,22 @@ class DB
 
         // Figure our the difference for each field
         switch (action) {
-            case this._revActions.delete:
+            case this._revActions.trash:
                 // We don't need any specific changes for deleted objects, except
                 // for the _deleted_at timestamp
                 diff = {
                     _deleted_at: [
                         [1, this._now()],
+                    ],
+                };
+
+                break;
+            case this._revActions.restore:
+                // We don't need any specific changes for restored objects,
+                // except for the nulled _deleted_at
+                diff = {
+                    _deleted_at: [
+                        [-1, before._deleted_at],
                     ],
                 };
 
@@ -499,10 +535,13 @@ class DB
             data._created_at = data._created_at ? data._created_at : null;
             data._updated_at = data._updated_at ? data._updated_at : null;
             data._deleted_at = data._deleted_at ? data._deleted_at : null;
+            data._purged = data._purged !== undefined
+                ? parseInt(data._purged)
+                : 0;
 
             try {
                 // If the doc exists - update it
-                let doc = await this.getById(docId);
+                let doc = await this.withTrashed().getById(docId);
 
                 // Update the doc data
                 const missingRevs = data._revs;
