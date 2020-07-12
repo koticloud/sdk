@@ -227,8 +227,17 @@ class IndexedDB extends DbDriver
         for (let where of wheres) {
             const operator = where.operator == '=' ? '==' : where.operator;
             let value = item[where.field];
+            let whereValue = where.value;
 
-            conditions.push(`${value} ${operator} ${where.value}`);
+            if (typeof value === 'string') {
+                value = `'${value}'`;
+            }
+
+            if (typeof whereValue === 'string') {
+                whereValue = `'${whereValue}'`;
+            }
+
+            conditions.push(`${value} ${operator} ${whereValue}`);
         }
 
         return eval(conditions.join(' && '));

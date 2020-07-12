@@ -74,7 +74,7 @@ class DB
         if (value !== undefined) {
             this._query.wheres.push({ field, operator, value });
         } else {
-            this._query.wheres.push({ field, operator: '=', value });
+            this._query.wheres.push({ field, operator: '=', value: operator });
         }
 
         return this;
