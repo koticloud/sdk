@@ -119,12 +119,30 @@ class DB
     }
 
     /**
-     * Fetch both trashed and non-trashed docs.
+     * Include trashed docs in the results.
      */
     withTrashed() {
         // Find the _deleted_at WHERE if any and remove it
         const condition = this._query.wheres.find(item => {
             return item.field == '_deleted_at';
+        });
+        
+        if (!condition) {
+            return this;
+        }
+
+        this._query.wheres.splice(this._query.wheres.indexOf(condition), 1);
+
+        return this;
+    }
+
+    /**
+     * Include deleted/purged docs in the results.
+     */
+    _withPurged() {
+        // Find the _deleted_at WHERE if any and remove it
+        const condition = this._query.wheres.find(item => {
+            return item.field == '_purged';
         });
         
         if (!condition) {
@@ -143,12 +161,18 @@ class DB
         this._query = {
             collection: this._query.collection,
             wheres: [
-                // By default the deleted (trashed) items are hidden
+                // By default the trashed items are hidden
                 {
                     field: '_deleted_at',
                     operator: '=',
                     value: null,
-                }
+                },
+                // By default the deleted (purged) items are hidden
+                {
+                    field: '_purged',
+                    operator: '=',
+                    value: 0,
+                },
             ],
             orders: [],
         };
@@ -165,9 +189,10 @@ class DB
      * Create a new document. Throws an exception if the id inside the data
      * object is not unique.
      * 
-     * @param {object} data 
+     * @param {object} data
+     * @param {bool} updateMetadata
      */
-    async create(data) {
+    async create(data, updateMetadata = true) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -179,11 +204,13 @@ class DB
             _updated_at: this._now(),
             _deleted_at: null,
             _purged: 0,
+            _synced: false,
             _revs: [],
         });
 
-        // Add a revision
-        data._revs.push(this._makeRevision(this._revActions.create, {}, data));
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Add a revision
+        // data._revs.push(this._makeRevision(this._revActions.create, {}, data));
 
         // Call the driver method
         return await this._driver.create(data);
@@ -206,22 +233,28 @@ class DB
     /**
      * Update an existing document.
      * 
-     * @param {PouchDB doc} doc 
+     * @param {object} doc 
+     * @param {bool} updateMetadata
      */
-    async update(doc, makeRevision = true) {
+    async update(doc, updateMetadata = true) {
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // Original data before changes were made
-        const before = await this.withTrashed().getById(doc._id);
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Original data before changes were made
+        // const before = await this.withTrashed().getById(doc._id);
 
-        // Update the document's timestamps
-        doc._updated_at = this._now();
-
-        // Add a revision
-        if (makeRevision) {
-            doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
+        // Update the document's metadata
+        if (updateMetadata) {
+            doc._updated_at = this._now();
+            doc._synced = false;
         }
+
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Add a revision
+        // if (makeRevision) {
+        //     doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
+        // }
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -250,15 +283,18 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // Original data before changes were made
-        const before = await this.getById(doc._id);
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Original data before changes were made
+        // const before = await this.getById(doc._id);
 
         // Update the document object
         doc._deleted_at = this._now();
         doc._updated_at = this._now();
+        doc._synced = false;
 
-        // Add a revision
-        doc._revs.push(this._makeRevision(this._revActions.trash, before, doc));
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Add a revision
+        // doc._revs.push(this._makeRevision(this._revActions.trash, before, doc));
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -273,16 +309,19 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // Original data before changes were made
-        const before = await this.withTrashed().getById(doc._id);
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Original data before changes were made
+        // const before = await this.withTrashed().getById(doc._id);
 
         // Update the document object
         doc._deleted_at = this._now();
         doc._updated_at = this._now();
         doc._purged = 1;
+        doc._synced = false;
 
-        // Add a revision
-        doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Add a revision
+        // doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -303,9 +342,11 @@ class DB
         // Update the document object
         doc._deleted_at = null;
         doc._updated_at = this._now();
+        doc._synced = false;
 
-        // Add a revision
-        doc._revs.push(this._makeRevision(this._revActions.restore, before, doc));
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Add a revision
+        // doc._revs.push(this._makeRevision(this._revActions.restore, before, doc));
 
         // Call the driver method
         return await this._driver.update(doc);
@@ -362,10 +403,7 @@ class DB
         const doc = await this._driver.getById(id, this._query);
 
         if (!doc) {
-            throw {
-                status: 404,
-                message: 'not found',
-            }
+            return null;
         }
 
         // Reset the query
@@ -484,169 +522,266 @@ class DB
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
-        // Get the list of all the local docs
-        const allDocs = await this.getAll();
+        // Get the latest '_updated_at' timestamp among all the synced docs
+        const allSyncedDocs = await this.withTrashed()
+            ._withPurged()
+            .where('_synced', true)
+            .orderBy('_updated_at', 'desc')
+            .get();
 
-        const diffs = await this.syncGetDiffs(allDocs);
+        let lastSyncAt = 0;
 
-        // Upload changes to the server. Let exceptions through to prevent the
-        // further download operation in case of an error.
-        await this.syncUploadChanges(allDocs, diffs.upload);
-
-        // Re-download the just uploaded docs, because patching is done on the
-        // server and we can't predict the final results, especially since there
-        // might be conflicts
-        const redownload = {};
-
-        for (let docId of Object.keys(diffs.upload)) {
-            redownload[docId] = [];
+        if (allSyncedDocs.docs.length) {
+            lastSyncAt = allSyncedDocs.docs[0]._updated_at;
         }
 
-        await this.syncDownloadChanges(redownload);
+        // Prepare the list of docs to upload
+        let docsToUpload = await this.withTrashed()
+            ._withPurged()
+            .where('_synced', false)
+            .get();
 
-        // Download the missing changes from the server if the upload was
-        // successful
-        await this.syncDownloadChanges(diffs.download);
+        docsToUpload = docsToUpload.docs;
 
-        // Delete the docs that were purged/deleted from the server
-        await this.syncDeletePurged(diffs.deleted);
+        // Upload the data
+        const response = await axios.post('/api/i/app-user-db/sync/lww', {
+            last_sync_at: lastSyncAt,
+            uploads: docsToUpload,
+        });
+
+        // Update local docs on success
+        for (let doc of docsToUpload) {
+            // Delete the purged docs forever
+            if (doc._purged) {
+                await this.deleteById(doc._id);
+
+                continue;
+            }
+
+            // Mark the uploaded docs as synced
+            doc._synced = true;
+
+            this.update(doc, false);
+        }
+
+        // Server returns data that we're missing locally. Save that data.
+        await this.syncDownloadedChanges(response.data.downloads);
+
+        // // Delete the docs that were purged/deleted from the server
+        // await this.syncDeletePurged(diffs.deleted);
 
         return true;
     }
 
     /**
-     * Get differences between the local and the remote Koti Cloud DBs.
+     * Save the remote data locally.
      */
-    async syncGetDiffs(allDocs) {
-        // NOTE: Ignoring the exceptions here
-        const revs = [];
-
-        for (let doc of allDocs.docs) {
-            for (let rev of doc._revs) {
-                revs.push({
-                    doc_id: doc._id,
-                    rev_id: rev.id,
-                });
-            }
+    async syncDownloadedChanges(data) {
+        if (!data || !data.length) {
+            return;
         }
-
-        const response = await axios.post('/api/i/app-user-db/sync/diff', {
-            revs: revs,
-        });
-
-        return response.data;
-    }
-
-    /**
-     * Get differences between the local and the remote Koti Cloud DBs.
-     */
-    async syncUploadChanges(allDocs, upload) {
-        if (!Object.keys(upload).length) {
-            return true;
-        }
-
-        // NOTE: Ignoring the exceptions here
-        // Prepare the data
-        const docs = {};
-
-        for (let doc of allDocs.docs) {
-            if (upload[doc._id] !== undefined) {
-                docs[doc._id] = doc;
-
-                docs[doc._id]._revs = docs[doc._id]._revs.filter(item => {
-                    return upload[doc._id].indexOf(item.id) > -1;
-                });
-
-                // Stringify revs' diffs, otherwise certain chars and some
-                // spaces get lost when the data is sent to the server
-                docs[doc._id]._revs = docs[doc._id]._revs.map(item => {
-                    item.diff = JSON.stringify(item.diff);
-
-                    return item;
-                });
-            }
-        }
-
-        await axios.post('/api/i/app-user-db/sync/upload', {
-            docs: docs,
-        });
-
-        return true;
-    }
- 
-    /**
-     * Get differences between the local and the remote Koti Cloud DBs.
-     */
-    async syncDownloadChanges(download) {
-        if (!Object.keys(download).length) {
-            return true;
-        }
-
-        const response = await axios.post('/api/i/app-user-db/sync/download', {
-            docs: download,
-        });
-
-        const docs = response.data.docs;
 
         // Create/update local docs
-        for (let docId of Object.keys(docs)) {
-            const data = docs[docId];
+        for (let doc of data) {
+            let docData = JSON.parse(doc.document);
 
-            data._revs = data._revs.map(revItem => {
-                revItem.diff = JSON.parse(revItem.diff);
+            // Delete forever the deleted/purged docs
+            if (docData._purged) {
+                await this.deleteById(doc.doc_id);
 
-                return revItem;
-            });
+                continue;
+            }
 
-            // Convert the special fields
-            data._created_at = data._created_at ? data._created_at : null;
-            data._updated_at = data._updated_at ? data._updated_at : null;
-            data._deleted_at = data._deleted_at ? data._deleted_at : null;
-            data._purged = (data._purged === 0 || data._purged === 1 || data._purged === '0' || data._purged === '1')
-                ? data._purged
-                : 0;
+            // Mark the doc as synced, override the server value as it is
+            // irrelevant
+            docData._synced = true;
 
-            try {
-                // If the doc exists - update it
-                let doc = await this.withTrashed().getById(docId);
+            // If the doc exists - update it
+            let localDoc = await this.withTrashed()
+                ._withPurged()
+                .getById(doc.doc_id);
 
-                // Update the doc data
-                const missingRevs = data._revs;
-                delete data._revs;
-
-                doc = Object.assign(doc, data);
-
-                // Add the new revs
-                for (let rev of missingRevs) {
-                    doc._revs.push(rev);
-                }
-
-                // Persist the changes without creating new revisions in the
-                // process
-                this.update(doc, false);
-            } catch (error) {
+            if (localDoc) {
+                // Update the doc
+                this.update(docData, false);
+            } else {
                 // Otherwise store a new doc
-                await this.store(data);
+                await this.store(docData);
             }
         }
 
         return true;
     }
 
-    /**
-     * Delete the docs that were purged/deleted from the server
-     */
-    async syncDeletePurged(deleted) {
-        if (!Object.keys(deleted).length) {
-            return true;
-        }
+    // TODO: The original diff/patch sync code, diff/patch is temporarily
+    // disabled
+    // /**
+    //  * Sync the DB with Koti Cloud server.
+    //  */
+    // async sync() {
+    //     // Get the list of all the local docs
+    //     const allDocs = await this.getAll();
 
-        for (let id of deleted) {
-            await this.deleteById(id);
-        }
+    //     const diffs = await this.syncGetDiffs(allDocs);
 
-        return true;
-    }
+    //     // Upload changes to the server. Let exceptions through to prevent the
+    //     // further download operation in case of an error.
+    //     await this.syncUploadChanges(allDocs, diffs.upload);
+
+    //     // Re-download the just uploaded docs, because patching is done on the
+    //     // server and we can't predict the final results, especially since there
+    //     // might be conflicts
+    //     const redownload = {};
+
+    //     for (let docId of Object.keys(diffs.upload)) {
+    //         redownload[docId] = [];
+    //     }
+
+    //     await this.syncDownloadChanges(redownload);
+
+    //     // Download the missing changes from the server if the upload was
+    //     // successful
+    //     await this.syncDownloadChanges(diffs.download);
+
+    //     // Delete the docs that were purged/deleted from the server
+    //     await this.syncDeletePurged(diffs.deleted);
+
+    //     return true;
+    // }
+
+    // /**
+    //  * Get differences between the local and the remote Koti Cloud DBs.
+    //  */
+    // async syncGetDiffs(allDocs) {
+    //     // NOTE: Ignoring the exceptions here
+    //     const revs = [];
+
+    //     for (let doc of allDocs.docs) {
+    //         for (let rev of doc._revs) {
+    //             revs.push({
+    //                 doc_id: doc._id,
+    //                 rev_id: rev.id,
+    //             });
+    //         }
+    //     }
+
+    //     const response = await axios.post('/api/i/app-user-db/sync/diff', {
+    //         revs: revs,
+    //     });
+
+    //     return response.data;
+    // }
+
+    // /**
+    //  * Get differences between the local and the remote Koti Cloud DBs.
+    //  */
+    // async syncUploadChanges(allDocs, upload) {
+    //     if (!Object.keys(upload).length) {
+    //         return true;
+    //     }
+
+    //     // NOTE: Ignoring the exceptions here
+    //     // Prepare the data
+    //     const docs = {};
+
+    //     for (let doc of allDocs.docs) {
+    //         if (upload[doc._id] !== undefined) {
+    //             docs[doc._id] = doc;
+
+    //             docs[doc._id]._revs = docs[doc._id]._revs.filter(item => {
+    //                 return upload[doc._id].indexOf(item.id) > -1;
+    //             });
+
+    //             // Stringify revs' diffs, otherwise certain chars and some
+    //             // spaces get lost when the data is sent to the server
+    //             docs[doc._id]._revs = docs[doc._id]._revs.map(item => {
+    //                 item.diff = JSON.stringify(item.diff);
+
+    //                 return item;
+    //             });
+    //         }
+    //     }
+
+    //     await axios.post('/api/i/app-user-db/sync/upload', {
+    //         docs: docs,
+    //     });
+
+    //     return true;
+    // }
+ 
+    // /**
+    //  * Get differences between the local and the remote Koti Cloud DBs.
+    //  */
+    // async syncDownloadChanges(download) {
+    //     if (!Object.keys(download).length) {
+    //         return true;
+    //     }
+
+    //     const response = await axios.post('/api/i/app-user-db/sync/download', {
+    //         docs: download,
+    //     });
+
+    //     const docs = response.data.docs;
+
+    //     // Create/update local docs
+    //     for (let docId of Object.keys(docs)) {
+    //         const data = docs[docId];
+
+    //         data._revs = data._revs.map(revItem => {
+    //             revItem.diff = JSON.parse(revItem.diff);
+
+    //             return revItem;
+    //         });
+
+    //         // Convert the special fields
+    //         data._created_at = data._created_at ? data._created_at : null;
+    //         data._updated_at = data._updated_at ? data._updated_at : null;
+    //         data._deleted_at = data._deleted_at ? data._deleted_at : null;
+    //         data._purged = (data._purged === 0 || data._purged === 1 || data._purged === '0' || data._purged === '1')
+    //             ? data._purged
+    //             : 0;
+
+    //         try {
+    //             // If the doc exists - update it
+    //             let doc = await this.withTrashed().getById(docId);
+
+    //             // Update the doc data
+    //             const missingRevs = data._revs;
+    //             delete data._revs;
+
+    //             doc = Object.assign(doc, data);
+
+    //             // Add the new revs
+    //             for (let rev of missingRevs) {
+    //                 doc._revs.push(rev);
+    //             }
+
+    //             // Persist the changes without creating new revisions in the
+    //             // process
+    //             this.update(doc, false);
+    //         } catch (error) {
+    //             // Otherwise store a new doc
+    //             await this.store(data);
+    //         }
+    //     }
+
+    //     return true;
+    // }
+
+    // /**
+    //  * Delete the docs that were purged/deleted from the server
+    //  */
+    // async syncDeletePurged(deleted) {
+    //     if (!Object.keys(deleted).length) {
+    //         return true;
+    //     }
+
+    //     for (let id of deleted) {
+    //         await this.deleteById(id);
+    //     }
+
+    //     return true;
+    // }
 }
 
 export default DB;
