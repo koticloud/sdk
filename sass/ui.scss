@@ -1,3 +1,5 @@
+$successGreen: #99d418;
+
 .koti-cloud-sdk-ui--overlay {
     position: fixed;
     width: 100%;
@@ -25,18 +27,19 @@
     margin: auto 0;
     max-width: 100%;
 
-    .koti-cloud-sdk-ui--dialog--buttons {
+    &--buttons {
         margin-top: 1rem;
         display: flex;
         justify-content: space-evenly;
     }
 
-    .koti-cloud-sdk-ui--dialog--button {
+    &--button {
         background: none;
         border: none;
         border-bottom: 1px solid #ddd;
         outline: none;
         font-size: 1rem;
+        font-family: inherit;
         color: #666;
         cursor: pointer;
         margin: 0 .25rem;
@@ -45,6 +48,43 @@
         &:hover {
             border-bottom: 1px solid #666;
             color: #222;
+        }
+
+        &:focus, &:active {
+            outline: none;
+        }
+
+        &::-moz-focus-inner {
+            border: none;
+        }
+    }
+
+    &--title {
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    &--select-list {
+        text-align: center;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        li {
+            cursor: pointer;
+            padding: .5rem;
+            margin: .5rem 0;
+            color: #666;
+
+            &:hover {
+                color: #222;
+            }
+
+            &.active {
+                color: #222;
+                border-left: 2px solid $successGreen;
+            }
         }
     }
 }

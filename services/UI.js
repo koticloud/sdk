@@ -2,7 +2,7 @@ class UI {
     constructor() {
         this._initialize();
 
-        this.openDialogsCount = 0;
+        this._openDialogsCount = 0;
     }
 
     _initialize() {
@@ -21,6 +21,12 @@ class UI {
         this.overlayEl.classList.remove('show');
     }
 
+    /**
+     * Show a confirmation dialog.
+     * 
+     * @param {string} msg
+     * @param {string} id
+     */
     confirm(msg, id = null) {
         // Dialog container
         const dialogEl = document.createElement('div');
@@ -30,16 +36,18 @@ class UI {
         if (id) {
             // If dialog with this id already exists - don't create a new one
             if (document.querySelector(`.koti-cloud-sdk-ui--dialog[data-id="${id}"]`)) {
-                return;
+                return new Promise((resolve, reject) => {
+                    reject();
+                });
             }
 
             dialogEl.dataset.id = id;
         }
 
-        // Dialog message container
-        const messageEl = document.createElement('div');
-        messageEl.classList.add('koti-cloud-sdk-ui--dialog--message');
-        messageEl.innerText = msg;
+        // Dialog body container
+        const bodyEl = document.createElement('div');
+        bodyEl.classList.add('koti-cloud-sdk-ui--dialog--body');
+        bodyEl.innerText = msg;
 
         // Dialog buttons container
         const buttonsEl = document.createElement('div');
@@ -58,7 +66,7 @@ class UI {
         buttonsEl.appendChild(btnYes);
         buttonsEl.appendChild(btnNo);
 
-        dialogEl.appendChild(messageEl);
+        dialogEl.appendChild(bodyEl);
         dialogEl.appendChild(buttonsEl);
 
         this.overlayEl.appendChild(dialogEl);
@@ -66,17 +74,17 @@ class UI {
         // Show the overlay with all the elements
         this._showOverlay();
 
-        this.openDialogsCount++;
+        this._openDialogsCount++;
 
         // Return a promise
         return new Promise((resolve, reject) => {
             btnYes.addEventListener('click', (e) => {
                 // Destroy the dialog
                 dialogEl.remove();
-                this.openDialogsCount--;
+                this._openDialogsCount--;
 
                 // Hide the overlay if there are no more open dialogs left
-                if (!this.openDialogsCount) {
+                if (!this._openDialogsCount) {
                     this._hideOverlay();
                 }
 
@@ -86,16 +94,146 @@ class UI {
             btnNo.addEventListener('click', (e) => {
                 // Destroy the dialog
                 dialogEl.remove();
-                this.openDialogsCount--;
+                this._openDialogsCount--;
 
                 // Hide the overlay if there are no more open dialogs left
-                if (!this.openDialogsCount) {
+                if (!this._openDialogsCount) {
                     this._hideOverlay();
                 }
 
                 reject();
             }, { once: false });
         });
+    }
+
+    /**
+     * Show a select dialog.
+     * 
+     * @param {Array} options 
+     * @param {string} id
+     */
+    select(options, id = null) {
+        // If dialog with the specified id already exists - don't create a new
+        // one
+        if (id && document.querySelector(`.koti-cloud-sdk-ui--dialog[data-id="${id}"]`)) {
+            return new Promise((resolve, reject) => {
+                reject();
+            });
+        }
+
+        const title = options.title ? options.title : 'Select Option';
+        const selected = options.selected ? options.selected : null;
+        options = options.options;
+
+        // Dialog container
+        const dialogEl = document.createElement('div');
+        dialogEl.classList.add('koti-cloud-sdk-ui--dialog');
+
+        // If an id was specified
+        if (id) {
+            dialogEl.dataset.id = id;
+        }
+
+        // Dialog title
+        let titleEl = null;
+
+        if (title) {
+            titleEl = document.createElement('div');
+            titleEl.classList.add('koti-cloud-sdk-ui--dialog--title');
+            titleEl.innerText = title;
+        }
+
+        // Dialog body container
+        const bodyEl = document.createElement('div');
+        bodyEl.classList.add('koti-cloud-sdk-ui--dialog--body');
+
+        const list = document.createElement('ul');
+        list.classList.add('koti-cloud-sdk-ui--dialog--select-list');
+
+        for (let value of Object.keys(options)) {
+            const li = document.createElement('li');
+            li.innerText = options[value];
+            li.dataset.value = value;
+
+            if (value == selected) {
+                li.classList.add('active');
+            }
+
+            list.appendChild(li);
+        }
+
+        bodyEl.appendChild(list);
+
+        // Dialog buttons container
+        const buttonsEl = document.createElement('div');
+        buttonsEl.classList.add('koti-cloud-sdk-ui--dialog--buttons');
+
+        // Dialog buttons
+        const btnCancel = document.createElement('button');
+        btnCancel.classList.add('koti-cloud-sdk-ui--dialog--button');
+        btnCancel.innerText = 'Cancel';
+
+        buttonsEl.appendChild(btnCancel);
+
+        // Append elements
+        if (titleEl) {
+            dialogEl.appendChild(titleEl);
+        }
+        dialogEl.appendChild(bodyEl);
+        dialogEl.appendChild(buttonsEl);
+
+        this.overlayEl.appendChild(dialogEl);
+
+        // Show the overlay with all the elements
+        this._showOverlay();
+
+        this._openDialogsCount++;
+
+        // Return a promise
+        return new Promise((resolve, reject) => {
+            list.addEventListener('click', (e) => {
+                if (e.target.nodeName.toLowerCase() === 'li') {
+                    const selectedValue = e.target.dataset.value;
+
+                    // Destroy the dialog
+                    dialogEl.remove();
+                    this._openDialogsCount--;
+
+                    // Hide the overlay if there are no more open dialogs left
+                    if (!this._openDialogsCount) {
+                        this._hideOverlay();
+                    }
+
+                    // Return the selected value
+                    resolve(selectedValue);
+                }
+            }, { once: false });
+
+            btnCancel.addEventListener('click', (e) => {
+                // Destroy the dialog
+                dialogEl.remove();
+                this._openDialogsCount--;
+
+                // Hide the overlay if there are no more open dialogs left
+                if (!this._openDialogsCount) {
+                    this._hideOverlay();
+                }
+
+                reject();
+            }, { once: false });
+        });
+    }
+
+    openDialogsCount() {
+        return this._openDialogsCount;
+    }
+
+    hasOpenDialogs() {
+        return this._openDialogsCount > 0;
+    }
+
+    overlayVisible() {
+        return this.overlayEl.classList.contains('show');
     }
 }
 
