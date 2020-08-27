@@ -1,8 +1,10 @@
 class UI {
     constructor() {
-        this._initialize();
-
         this._openDialogsCount = 0;
+        this.overlayEl = null;
+        this.notificationsContainerEl = null;
+
+        this._initialize();
     }
 
     _initialize() {
@@ -10,7 +12,19 @@ class UI {
 
         this.overlayEl = document.createElement('div');
         this.overlayEl.classList.add('koti-cloud-sdk-ui--overlay');
+
+        this.notificationsContainerEl = document.createElement('div');
+        this.notificationsContainerEl.classList.add('koti-cloud-sdk-ui--notifications-container');
+
         body.appendChild(this.overlayEl);
+        body.appendChild(this.notificationsContainerEl);
+
+        // Close notifications on click
+        this.notificationsContainerEl.addEventListener('click', (e) => {
+            if (e.target.classList.contains('koti-cloud-sdk-ui--notification')) {
+                this._closeNotification(e.target);
+            }
+        });
     }
 
     _showOverlay() {
@@ -222,6 +236,28 @@ class UI {
                 reject();
             }, { once: false });
         });
+    }
+
+    notify(text, type = 'info') {
+        const notification = document.createElement('div');
+        notification.classList.add('koti-cloud-sdk-ui--notification');
+        notification.classList.add(type);
+        notification.innerText = text;
+
+        this.notificationsContainerEl.appendChild(notification);
+
+        // Close notification automatically after a few seconds
+        setTimeout(() => {
+            this._closeNotification(notification);
+        }, 5000);
+    }
+
+    _closeNotification(el) {
+        if (!el || !el.parentElement) {
+            return;
+        }
+
+        el.parentElement.removeChild(el);
     }
 
     openDialogsCount() {
