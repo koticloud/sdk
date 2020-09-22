@@ -199,6 +199,14 @@ class App {
                 updatePromises.push(cache.delete(file));
             }
 
+            // Unregister the service worker (will be updated on the next page
+            // refresh)
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            }); 
+
             // After all the required files were deleted from cache
             Promise.all(updatePromises)
                 .then((values) => {
