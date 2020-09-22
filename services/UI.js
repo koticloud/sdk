@@ -10,6 +10,16 @@ class UI {
     _initialize() {
         const body = document.querySelector('body');
 
+        // Prevent multiple initialization (this class is only appended after
+        // an initialization)
+        if (body.classList.contains('koti-cloud-sdk-ui--initialized')) {
+            // Get the existing elements
+            this.overlayEl = document.querySelector('.koti-cloud-sdk-ui--overlay');
+            this.notificationsContainerEl = document.querySelector('.koti-cloud-sdk-ui--notifications-container');
+
+            return;
+        }
+
         this.overlayEl = document.createElement('div');
         this.overlayEl.classList.add('koti-cloud-sdk-ui--overlay');
 
@@ -25,6 +35,9 @@ class UI {
                 this._closeNotification(e.target);
             }
         });
+
+        // This will tell us the the UI component has been initialized
+        body.classList.add('koti-cloud-sdk-ui--initialized');
     }
 
     _showOverlay() {
