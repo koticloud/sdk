@@ -26,7 +26,7 @@ class DB
             delete: 'delete',
         };
 
-        this._dmp = new diff_match_patch();
+        // this._dmp = new diff_match_patch();
     }
 
     /**
@@ -427,96 +427,96 @@ class DB
         return true;
     }
 
-    /**
-     * Make a revision for a document
-     * 
-     * @param {string} action 
-     * @param {object} before 
-     * @param {object} after 
-     */
-    _makeRevision(action, before, after) {
-        const ordinalNumber = before.hasOwnProperty('_revs')
-            ? before._revs.length + 1
-            : 1;
+    // /**
+    //  * Make a revision for a document
+    //  * 
+    //  * @param {string} action 
+    //  * @param {object} before 
+    //  * @param {object} after 
+    //  */
+    // _makeRevision(action, before, after) {
+    //     const ordinalNumber = before.hasOwnProperty('_revs')
+    //         ? before._revs.length + 1
+    //         : 1;
         
-        // Figure our the list of common fields
-        let fields = Object.assign({}, before, after);
+    //     // Figure our the list of common fields
+    //     let fields = Object.assign({}, before, after);
 
-        // Remove the special fields form the list
-        delete fields._id;
-        delete fields._collection;
-        delete fields._revs;
+    //     // Remove the special fields form the list
+    //     delete fields._id;
+    //     delete fields._collection;
+    //     delete fields._revs;
 
-        // Field names
-        fields = Object.keys(fields);
+    //     // Field names
+    //     fields = Object.keys(fields);
 
-        // Figure out the differences between the two documents
-        let diff = {};
+    //     // Figure out the differences between the two documents
+    //     let diff = {};
 
-        // Figure our the difference for each field
-        switch (action) {
-            case this._revActions.trash:
-                // We don't need any specific changes for trashed objects,
-                // except for the _deleted_at timestamp
-                diff = {
-                    _deleted_at: [
-                        [1, this._now()],
-                    ],
-                };
+    //     // Figure our the difference for each field
+    //     switch (action) {
+    //         case this._revActions.trash:
+    //             // We don't need any specific changes for trashed objects,
+    //             // except for the _deleted_at timestamp
+    //             diff = {
+    //                 _deleted_at: [
+    //                     [1, this._now()],
+    //                 ],
+    //             };
 
-                break;
-            case this._revActions.restore:
-                // We don't need any specific changes for restored objects,
-                // except for the nulled _deleted_at
-                diff = {
-                    _deleted_at: [
-                        [-1, before._deleted_at],
-                    ],
-                };
+    //             break;
+    //         case this._revActions.restore:
+    //             // We don't need any specific changes for restored objects,
+    //             // except for the nulled _deleted_at
+    //             diff = {
+    //                 _deleted_at: [
+    //                     [-1, before._deleted_at],
+    //                 ],
+    //             };
 
-                break;
-            case this._revActions.delete:
-                // We don't need any specific changes for deleted objects,
-                // since all its revs and data will be deleted on the server
-                diff = {};
+    //             break;
+    //         case this._revActions.delete:
+    //             // We don't need any specific changes for deleted objects,
+    //             // since all its revs and data will be deleted on the server
+    //             diff = {};
 
-                break;
-            default:
-                for (let field of fields) {
-                    if (before[field] === undefined) {
-                        diff[field] = [
-                            // A single "Add chars" action
-                            [1, after[field]]
-                        ];
-                    } else if (after[field] === undefined) {
-                        diff[field] = [
-                            // A single "Remove chars" action
-                            [0, before[field]]
-                        ];
-                    } else {
-                        const beforeVal = (typeof before[field] === 'string')
-                            ? before[field]
-                            : JSON.stringify(before[field]);
+    //             break;
+    //         default:
+    //             for (let field of fields) {
+    //                 if (before[field] === undefined) {
+    //                     diff[field] = [
+    //                         // A single "Add chars" action
+    //                         [1, after[field]]
+    //                     ];
+    //                 } else if (after[field] === undefined) {
+    //                     diff[field] = [
+    //                         // A single "Remove chars" action
+    //                         [0, before[field]]
+    //                     ];
+    //                 } else {
+    //                     const beforeVal = (typeof before[field] === 'string')
+    //                         ? before[field]
+    //                         : JSON.stringify(before[field]);
 
-                        const afterVal = (typeof after[field] === 'string')
-                            ? after[field]
-                            : JSON.stringify(after[field]);
+    //                     const afterVal = (typeof after[field] === 'string')
+    //                         ? after[field]
+    //                         : JSON.stringify(after[field]);
 
-                        diff[field] = this._dmp.diff_main(
-                            beforeVal,
-                            afterVal
-                        );
-                    }
-                }
-        }
+    //                     diff[field] = this._dmp.diff_main(
+    //                         beforeVal,
+    //                         afterVal
+    //                     );
+    //                 }
+    //             }
+    //     }
 
-        return {
-            id: this._generateUniqueId(),
-            order: ordinalNumber,
-            action: action,
-            diff: diff,
-        };
-    }
+    //     return {
+    //         id: this._generateUniqueId(),
+    //         order: ordinalNumber,
+    //         action: action,
+    //         diff: diff,
+    //     };
+    // }
 
     /**
      * Sync the DB with Koti Cloud server.
@@ -544,7 +544,7 @@ class DB
         docsToUpload = docsToUpload.docs;
 
         // Upload the data
-        const response = await axios.post('/api/i/app-user-db/sync/lww', {
+        const response = await axios.post('/api/app-user-db/sync/lww', {
             last_sync_at: lastSyncAt,
             uploads: docsToUpload,
         });
@@ -665,7 +665,7 @@ class DB
     //         }
     //     }
 
-    //     const response = await axios.post('/api/i/app-user-db/sync/diff', {
+    //     const response = await axios.post('/api/app-user-db/sync/diff', {
     //         revs: revs,
     //     });
 
@@ -702,7 +702,7 @@ class DB
     //         }
     //     }
 
-    //     await axios.post('/api/i/app-user-db/sync/upload', {
+    //     await axios.post('/api/app-user-db/sync/upload', {
     //         docs: docs,
     //     });
 
@@ -717,7 +717,7 @@ class DB
     //         return true;
     //     }
 
-    //     const response = await axios.post('/api/i/app-user-db/sync/download', {
+    //     const response = await axios.post('/api/app-user-db/sync/download', {
     //         docs: download,
     //     });
 
