@@ -522,6 +522,11 @@ class DB
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
+        // Don't try to sync when offline
+        if (!this.isOnline()) {
+            return;
+        }
+
         // Get the latest '_updated_at' timestamp among all the synced docs
         const allSyncedDocs = await this.withTrashed()
             ._withPurged()
@@ -782,6 +787,15 @@ class DB
 
     //     return true;
     // }
+
+    /**
+     * Check whether the app is online (whether there's Internet connection)
+     * 
+     * @return boolean
+     */
+    isOnline() {
+        return window.navigator.onLine;
+    }
 }
 
 export default DB;
