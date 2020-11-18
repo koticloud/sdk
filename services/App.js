@@ -10,10 +10,12 @@ class App {
         this._cacheables = {};
 
         // App info
+        this.info = {};
         this.installedVersion = null;
         this.latestVersion = null;
 
         this.localStorage = {
+            appInfo: 'app.info',
             appVersion: 'app.version',
         };
     }
@@ -119,11 +121,12 @@ class App {
         let latestVersion = this.installedVersion;
 
         try {
-            latestVersion = await this._fetchLatestVersion();
-
-            this.latestVersion = latestVersion;
+            this.info = await this._fetchUpdatedAppInfo();
+            
+            latestVersion = this.info.version;
         } catch (error) {
             // Ignore exception
+            console.error('Error while fetching current app info!');
         }
 
         return new Promise((resolve, reject) => {
@@ -164,11 +167,11 @@ class App {
      * 
      * @return Promise
      */
-    async _fetchLatestVersion() {
+    async _fetchUpdatedAppInfo() {
         return new Promise((resolve, reject) => {
-            axios.get(`${this.baseUrl}/api/app/version`)
+            axios.get(`${this.baseUrl}/api/apps/current`)
                 .then(response => {
-                    resolve(response.data.version);
+                    resolve(response.data);
                 })
                 .catch(response => {
                     reject(response);

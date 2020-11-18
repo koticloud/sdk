@@ -549,7 +549,7 @@ class DB
         docsToUpload = docsToUpload.docs;
 
         // Upload the data
-        const response = await axios.post('/api/app-user-db/sync/lww', {
+        const response = await axios.post('/api/apps/db/sync/lww', {
             last_sync_at: lastSyncAt,
             uploads: docsToUpload,
         });
@@ -670,7 +670,7 @@ class DB
     //         }
     //     }
 
-    //     const response = await axios.post('/api/app-user-db/sync/diff', {
+    //     const response = await axios.post('/api/apps/db/sync/diff', {
     //         revs: revs,
     //     });
 
@@ -707,7 +707,7 @@ class DB
     //         }
     //     }
 
-    //     await axios.post('/api/app-user-db/sync/upload', {
+    //     await axios.post('/api/apps/db/sync/upload', {
     //         docs: docs,
     //     });
 
@@ -722,7 +722,7 @@ class DB
     //         return true;
     //     }
 
-    //     const response = await axios.post('/api/app-user-db/sync/download', {
+    //     const response = await axios.post('/api/apps/db/sync/download', {
     //         docs: download,
     //     });
 
