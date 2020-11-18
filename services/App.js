@@ -118,19 +118,19 @@ class App {
             return new Promise((resolve, reject) => resolve(false));
         }
 
-        let latestVersion = this.installedVersion;
+        this.latestVersion = this.installedVersion;
 
         try {
             this.info = await this._fetchUpdatedAppInfo();
             
-            latestVersion = this.info.version;
+            this.latestVersion = this.info.version;
         } catch (error) {
             // Ignore exception
             console.error('Error while fetching current app info!');
         }
 
         return new Promise((resolve, reject) => {
-            resolve(latestVersion != this.installedVersion);
+            resolve(this.latestVersion != this.installedVersion);
         });
     }
 
@@ -150,6 +150,15 @@ class App {
         }
 
         if (await this.hasUpdates()) {
+            // If the current version is null, it probably means we're
+            // installing the app for the first time. In this case just update
+            // the local version and don't suggest to update.
+            if (this.installedVersion === null) {
+                this._updateLocalVersion(this.latestVersion)
+
+                return false;
+            }
+
             const msg = `A new version of this app is available. Do you want to update now?`;
 
             this._ui.confirm(msg, 'koti-cloud-sdk--app-update-available-dialog')
@@ -214,10 +223,7 @@ class App {
             Promise.all(updatePromises)
                 .then((values) => {
                     // Update version number in localStorage
-                    localStorage.setItem(
-                        this.localStorage.appVersion,
-                        this.latestVersion
-                    );
+                    this._updateLocalVersion(this.latestVersion);
 
                     // Ask the user a permission to restart the app now
                     const msg = `The app will be updated on the next restart. The operation requires internet connection and might take some time. Do you want to restart now?`;
@@ -237,6 +243,15 @@ class App {
                     this._ui.notify('Some or all of the files failed to update. You can restart the app and try again.', 'error');
                 });
         });
+    }
+
+    /**
+     * Update app's version in LocalStorage
+     * 
+     * @param {string} newVersion 
+     */
+    _updateLocalVersion(newVersion) {
+        localStorage.setItem(this.localStorage.appVersion, newVersion);
     }
 }
 
