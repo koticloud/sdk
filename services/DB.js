@@ -30,18 +30,25 @@ class DB
     }
 
     /**
-     * Initializ the preffered database driver
+     * Initialize the preferred database driver
      */
     async _initDriver() {
-        if (this._initialized) {
-            return true;
-        }
+        return new Promise(async (resolve, reject) => {
+            if (this._initialized) {
+                resolve();
 
-        switch (this._driver) {
-            default:
-                this._driver = await new IndexedDB(this._dbName);
-                this._initialized = true;
-        }
+                return true;
+            }
+
+            switch (this._driver) {
+                default:
+                    this._driver = await new IndexedDB(this._dbName).init();
+                    this._initialized = true;
+                    this._initializing = false;
+
+                    resolve();
+            }
+        });
     }
 
     /**
@@ -522,6 +529,9 @@ class DB
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
         // Don't try to sync when offline
         if (!this.isOnline()) {
             return;
@@ -582,6 +592,9 @@ class DB
      * Save the remote data locally.
      */
     async syncDownloadedChanges(data) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
         if (!data || !data.length) {
             return;
         }

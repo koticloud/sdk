@@ -6,17 +6,19 @@ class IndexedDB extends DbDriver
         super(dbName);
 
         this._storeName = 'main-store';
+    }
 
+    init() {
         return new Promise((resolve, reject) => {
-            const openRequest = indexedDB.open(dbName);
+            const openRequest = indexedDB.open(this._dbName);
 
-            openRequest.onupgradeneeded = function () {
+            openRequest.onupgradeneeded = (e) => {
                 // Create a single main store for all the data to not deal with
                 // schema management/upgrades
                 let db = openRequest.result;
 
                 if (!db.objectStoreNames.contains(this._storeName)) {
-                    db.createObjectStore('main-store', {
+                    db.createObjectStore(this._storeName, {
                         keyPath: '_id'
                     });
                 }
