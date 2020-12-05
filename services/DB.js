@@ -562,6 +562,8 @@ class DB
         const response = await axios.post('/api/apps/db/sync/lww', {
             last_sync_at: lastSyncAt,
             uploads: docsToUpload,
+        }, {
+            timeout: 1000 * 30, // Timeout 30 seconds
         });
 
         // Update local docs on success
