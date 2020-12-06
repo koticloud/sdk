@@ -1,6 +1,6 @@
 {
   "name": "koti-cloud-sdk",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "App SDK for Koti Cloud",
   "main": "sdk.js",
   "scripts": {
