@@ -63,20 +63,16 @@ class App {
         }
 
         // Register the PWAs service worker
-        window.onload = () => {
-            'use strict';
-
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker
-                    .register(swPath)
-                    .then((reg) => {
-                        // Do nothing
-                    })
-                    .catch(err => {
-                        console.error('ServiceWorker registration failed: ', err);
-                    });
-            }
-        };
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker
+                .register(swPath)
+                .then((reg) => {
+                    // Do nothing
+                })
+                .catch(err => {
+                    console.error('ServiceWorker registration failed: ', err);
+                });
+        }
     }
 
     /**
@@ -154,7 +150,7 @@ class App {
             // installing the app for the first time. In this case just update
             // the local version and don't suggest to update.
             if (this.installedVersion === null) {
-                this._updateLocalVersion(this.latestVersion)
+                this._updateLocalVersion(this.latestVersion);
 
                 return false;
             }
@@ -191,7 +187,7 @@ class App {
     /**
      * Update the app (fetch/download the latest version)
      */
-    update() {
+    async update() {
         if (!this._isInitialized()) {
             console.error('Initialize the app before calling update()');
 
@@ -203,7 +199,7 @@ class App {
         }
 
         // Update the app
-        window.caches.open('koti-cloud-noted').then((cache) => {
+        window.caches.open('koti-cloud-noted').then(async (cache) => {
             const updatePromises = [];
 
             // Clear files that were cached until the next update
@@ -211,17 +207,17 @@ class App {
                 updatePromises.push(cache.delete(file));
             }
 
-            // Unregister the service worker (will be updated on the next page
-            // refresh)
-            navigator.serviceWorker.getRegistrations().then((registrations) => {
-                for (let registration of registrations) {
-                    registration.unregister();
-                }
-            }); 
-
             // After all the required files were deleted from cache
             Promise.all(updatePromises)
-                .then((values) => {
+                .then(async (values) => {
+                    // Unregister the service worker (will be updated on the next page
+                    // refresh)
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+
                     // Update version number in localStorage
                     this._updateLocalVersion(this.latestVersion);
 
@@ -232,7 +228,7 @@ class App {
                         .then(res => {
                             // Refresh the page so that the removed files could
                             // downloaded & cached anew
-                            location.reload(true);
+                            location.reload();
                         })
                         .catch(res => {
                             // Do nothing
