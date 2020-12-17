@@ -13,6 +13,7 @@ class DB
         this._driverName = driver;
         this._driver = null;
         this._initialized = false;
+        this._syncing = false;
 
         // Query builder
         this._query = {
@@ -543,6 +544,12 @@ class DB
             return;
         }
 
+        if (this._syncing) {
+            return;
+        }
+
+        this._syncing = true;
+
         // Get the latest '_updated_at' timestamp among all the synced docs
         const allSyncedDocs = await this.withTrashed()
             ._withPurged()
@@ -592,6 +599,8 @@ class DB
 
         // // Delete the docs that were purged/deleted from the server
         // await this.syncDeletePurged(diffs.deleted);
+
+        this._syncing = false;
 
         return true;
     }

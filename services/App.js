@@ -1,4 +1,5 @@
 import axios from 'axios';
+import DB from './DB';
 import UI from './UI';
 
 class App {
@@ -6,7 +7,7 @@ class App {
         this._initialized = false;
 
         this.baseUrl = '';
-        this._ui = null;
+        this.ui = null;
         this._cacheables = {};
 
         // App info
@@ -18,6 +19,9 @@ class App {
             appInfo: 'app.info',
             appVersion: 'app.version',
         };
+
+        // Modules
+        this.db = null;
     }
 
     /**
@@ -25,17 +29,24 @@ class App {
      * 
      * @return void
      */
-    init(options) {
+    async init(options) {
         this._readCachedAppInfo();
 
         this.setCacheables(options.cacheables);
 
-        this._ui = new UI();
+        this.ui = new UI();
 
         this._registerServiceWorker(options.serviceWorker);
 
         const locationPaths = location.host.split('\.');
         this.baseUrl = `${location.protocol}//${locationPaths.slice(-2).join('\.')}`;
+
+        if (options.db) {
+            console.log('Found DB: ' + options.db + '. Will sync now');
+            this.db = new DB(options.db);
+
+            this.db.sync();
+        }
 
         this._initialized = true;
     }
@@ -78,7 +89,7 @@ class App {
     /**
      * Check whether the app has been initialized
      */
-    _isInitialized() {
+    isInitialized() {
         return this._initialized;
     }
 
@@ -104,7 +115,7 @@ class App {
      * @response boolean
      */
     async hasUpdates() {
-        if (!this._isInitialized()) {
+        if (!this.isInitialized()) {
             console.error('Initialize the app before calling hasUpdates()');
 
             return new Promise((resolve, reject) => resolve(false));
@@ -135,7 +146,7 @@ class App {
      * and offer to update
      */
     async checkForUpdates() {
-        if (!this._isInitialized()) {
+        if (!this.isInitialized()) {
             console.error('Initialize the app before calling checkForUpdates()');
 
             return;
@@ -157,7 +168,7 @@ class App {
 
             const msg = `A new version of this app is available. Do you want to update now?`;
 
-            this._ui.confirm(msg, 'koti-cloud-sdk--app-update-available-dialog')
+            this.ui.confirm(msg, 'koti-cloud-sdk--app-update-available-dialog')
                 .then(res => {
                     this.update();
                 })
@@ -188,7 +199,7 @@ class App {
      * Update the app (fetch/download the latest version)
      */
     async update() {
-        if (!this._isInitialized()) {
+        if (!this.isInitialized()) {
             console.error('Initialize the app before calling update()');
 
             return;
@@ -224,7 +235,7 @@ class App {
                     // Ask the user a permission to restart the app now
                     const msg = `The app will be updated on the next restart. The operation requires internet connection and might take some time. Do you want to restart now?`;
 
-                    this._ui.confirm(msg, 'koti-cloud-sdk--app-updated-dialog')
+                    this.ui.confirm(msg, 'koti-cloud-sdk--app-updated-dialog')
                         .then(res => {
                             // Refresh the page so that the removed files could
                             // downloaded & cached anew
@@ -236,7 +247,7 @@ class App {
                 })
                 .catch((response) => {
                     // Notify user about a fail
-                    this._ui.notify('Some or all of the files failed to update. You can restart the app and try again.', 'error');
+                    this.ui.notify('Some or all of the files failed to update. You can restart the app and try again.', 'error');
                 });
         });
     }
