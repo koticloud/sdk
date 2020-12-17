@@ -1,7 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import IndexedDB from './DbDrivers/IndexedDB';
-import diff_match_patch from 'diff-match-patch';
+import sha256 from 'js-sha256';
 import axios from 'axios';
+import diff_match_patch from 'diff-match-patch';
+
+import IndexedDB from './DbDrivers/IndexedDB';
 
 class DB
 {
@@ -65,9 +67,13 @@ class DB
 
     /**
      * Generate a unique ID string
+     * 
+     * @return string
      */
     _generateUniqueId() {
-        return uuidv4();
+        // It's hard to ensure a 100% unique string, but we can try at least
+        // SHA256 of 3 random UUIDs + current timestamp
+        return sha256(`${uuidv4()}-${uuidv4()}-${uuidv4()}-${Date.now()}`);
     }
 
     /**
