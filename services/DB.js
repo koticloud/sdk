@@ -431,7 +431,7 @@ class DB
      * 
      * @param {string} id
      */
-    async deleteById(id) {
+    async _deleteById(id) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -583,7 +583,7 @@ class DB
         for (let doc of docsToUpload) {
             // Delete the purged docs forever
             if (doc._purged) {
-                await this.deleteById(doc._id);
+                await this._deleteById(doc._id);
 
                 continue;
             }
@@ -594,8 +594,11 @@ class DB
             this.update(doc, false);
         }
 
+        // Server returns a list of invalid docs that we should delete
+        await this._syncWipeInvalidDocs(response.data.invalid);
+
         // Server returns data that we're missing locally. Save that data.
-        await this.syncDownloadedChanges(response.data.downloads);
+        await this._syncDownloadedChanges(response.data.downloads);
 
         // // Delete the docs that were purged/deleted from the server
         // await this.syncDeletePurged(diffs.deleted);
@@ -606,9 +609,9 @@ class DB
     }
 
     /**
-     * Save the remote data locally.
+     * Sync - apply changes from the server.
      */
-    async syncDownloadedChanges(data) {
+    async _syncDownloadedChanges(data) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -622,7 +625,7 @@ class DB
 
             // Delete forever the deleted/purged docs
             if (docData._purged) {
-                await this.deleteById(doc.doc_id);
+                await this._deleteById(doc.doc_id);
 
                 continue;
             }
@@ -643,6 +646,25 @@ class DB
                 // Otherwise store a new doc
                 await this.store(docData);
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Sync - wipe out the invalid local docs.
+     */
+    async _syncWipeInvalidDocs(docIds) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        if (!docIds || !docIds.length) {
+            return;
+        }
+
+        // Create/update local docs
+        for (let id of docIds) {
+            await this._deleteById(id);
         }
 
         return true;
@@ -812,7 +834,7 @@ class DB
     //     }
 
     //     for (let id of deleted) {
-    //         await this.deleteById(id);
+    //         await this._deleteById(id);
     //     }
 
     //     return true;
