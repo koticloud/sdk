@@ -44,7 +44,7 @@ class App {
         if (options.db) {
             this.db = new DB(options.db);
 
-            this.db.sync();
+            this._syncDbOnAppStart();
         }
 
         this._initialized = true;
@@ -258,6 +258,20 @@ class App {
      */
     _updateLocalVersion(newVersion) {
         localStorage.setItem(this.localStorage.appVersion, newVersion);
+    }
+
+    async _syncDbOnAppStart() {
+        try {
+            await this.db.sync();
+        } catch (error) {
+            if (error.response && error.response.status == 401) {
+                this.ui.notify('You are not logged in at Koti Cloud. Data synchronization between your devices and browsers will not work.');
+            } else {
+                console.error('DB sync has failed!');
+
+                console.log(error);
+            }
+        }
     }
 }
 
