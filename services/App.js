@@ -42,7 +42,6 @@ class App {
         this.baseUrl = `${location.protocol}//${locationPaths.slice(-2).join('\.')}`;
 
         if (options.db) {
-            console.log('Found DB: ' + options.db + '. Will sync now');
             this.db = new DB(options.db);
 
             this.db.sync();

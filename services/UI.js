@@ -1,8 +1,14 @@
+import Panel from './components/Panel.js';
+
 class UI {
     constructor() {
         this._openDialogsCount = 0;
         this.overlayEl = null;
         this.notificationsContainerEl = null;
+
+        this._components = [
+            new Panel(this),
+        ];
 
         this._initialize();
     }
@@ -20,14 +26,25 @@ class UI {
             return;
         }
 
+        for (let component of this._components) {
+            if (!component.isInitialized()) {
+                component.initialize();
+            }
+        }
+
         this.overlayEl = document.createElement('div');
         this.overlayEl.classList.add('koti-cloud-sdk-ui--overlay');
 
         this.notificationsContainerEl = document.createElement('div');
         this.notificationsContainerEl.classList.add('koti-cloud-sdk-ui--notifications-container');
 
+        // this.panelEl = document.createElement('div');
+        // this.panelEl.classList.add('koti-cloud-sdk-ui--panel');
+        // this.panelEl.innerHTML = this._getPanel();
+
         body.appendChild(this.overlayEl);
         body.appendChild(this.notificationsContainerEl);
+        // body.appendChild(this.panelEl);
 
         // Close notifications on click
         this.notificationsContainerEl.addEventListener('click', (e) => {
