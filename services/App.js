@@ -262,6 +262,7 @@ class App {
 
     async _syncDbOnAppStart() {
         try {
+            await this.db.validate();
             await this.db.sync();
         } catch (error) {
             if (error.response && error.response.status == 401) {
