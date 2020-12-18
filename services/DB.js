@@ -892,6 +892,17 @@ class DB
     // }
 
     /**
+     * Wipe out the whole DB
+     */
+    async wipe() {
+        await this._driver.wipeDb();
+
+        this._emit('synced');
+
+        return true;
+    }
+
+    /**
      * Check whether the app is online (whether there's Internet connection)
      * 
      * @return boolean

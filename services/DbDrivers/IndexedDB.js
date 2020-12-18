@@ -200,6 +200,16 @@ class IndexedDB extends DbDriver
     }
 
     /**
+     * Wipe out the whole DB
+     */
+    async wipeDb() {
+        return await this._asyncRequest(
+            this._getStore('readwrite'),
+            'clear'
+        );
+    }
+
+    /**
      * Does the item pass the WHERE conditions?
      * 
      * @param {object} item 
