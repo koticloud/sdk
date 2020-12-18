@@ -104,14 +104,30 @@ class Panel extends Component
     }
 
     _clearLocalData() {
-        this._ui.confirm('All your app data is stored and kept locally after you\'ve used the app. For security reasons you should delete your local data every time after using an app, unless you are using the app on a trusted (your own) device and not switching between Koti Cloud accounts. Ultimately your data is safely stored on our servers and won\'t be lost. Erase local data?')
-            .then(res => {
+        this._togglePanel();
+
+        const confirmation = 'Besides being stored on Koti Cloud servers, all your app data is also stored locally after you\'ve used the app even after you log out from Koti Cloud (unfortunately, this is a Koti Cloud limitation for the time being). If other people have access to your device or you are using the app on someone else\'s device, you probably want to delete the data for security reasons after you\'re done using the app. Erase local data?';
+
+        this._ui.confirm(confirmation)
+            .then(async (res) => {
                 // Erase local app data (the App DB)
+                if (!$kotiCloudApp.db) {
+                    return this._onLocalDataCleared();
+                }
+
+                await $kotiCloudApp.db.wipe();
+
+                return this._onLocalDataCleared();
                 // TODO: Now I need access to app.db / db directly. Doesn't sound like a good thing to inject it here. Can we make a global window.app in App.init() (window.app = this)? Is it a good idea?
             })
-            .catch(res => {
+            .catch(err => {
+                console.log(err);
                 // Do nothing
             });
+    }
+
+    _onLocalDataCleared() {
+        this._ui.notify('Local data has been cleared!', 'success');
     }
 }
 

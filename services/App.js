@@ -4,6 +4,10 @@ import UI from './UI';
 
 class App {
     constructor() {
+        if (window.$kotiCloudApp) {
+            return window.$kotiCloudApp;
+        }
+
         this._initialized = false;
 
         this.baseUrl = '';
@@ -22,6 +26,9 @@ class App {
 
         // Modules
         this.db = null;
+
+        // Make this app instance global
+        window.$kotiCloudApp = this;
     }
 
     /**
