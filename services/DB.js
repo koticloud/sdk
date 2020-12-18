@@ -4,6 +4,7 @@ import axios from 'axios';
 import diff_match_patch from 'diff-match-patch';
 
 import IndexedDB from './DbDrivers/IndexedDB';
+import HasEvents from '../traits/HasEvents';
 
 class DB
 {
@@ -14,6 +15,7 @@ class DB
         this._driver = null;
         this._initialized = false;
         this._syncing = false;
+        this._validating = false;
 
         // Query builder
         this._query = {
@@ -533,6 +535,53 @@ class DB
     // }
 
     /**
+     * Validate the local DB by sending all the doc IDs to Koti Cloud server,
+     * which will return a list of invalid docs which we can then wipe out.
+     */
+    async validate() {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Don't validate when offline
+        if (!this.isOnline()) {
+            return;
+        }
+
+        if (this._validating) {
+            return;
+        }
+
+        this._validating = true;
+
+        // Get IDs of all the docs
+        const allDocs = await this.withTrashed()
+            ._withPurged()
+            .get();
+
+        if (!allDocs.docs.length) {
+            return true;
+        }
+
+        const docIds = allDocs.docs.map(item => item._id);
+
+        // Upload the data
+        const response = await axios.post('/api/apps/db/validate-docs', {
+            docs: docIds,
+        }, {
+            timeout: 1000 * 30, // Timeout 30 seconds
+        });
+
+        // Server returns a list of invalid docs that we should delete
+        await this._syncWipeInvalidDocs(response.data.invalid);
+
+        this._validating = false;
+
+        this._emit('synced');
+
+        return true;
+    }
+
+    /**
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
@@ -604,6 +653,8 @@ class DB
         // await this.syncDeletePurged(diffs.deleted);
 
         this._syncing = false;
+
+        this._emit('synced');
 
         return true;
     }
@@ -849,5 +900,7 @@ class DB
         return window.navigator.onLine;
     }
 }
+
+Object.assign(DB.prototype, HasEvents);
 
 export default DB;
