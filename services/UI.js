@@ -1,5 +1,5 @@
-import Panel from './components/Panel.js';
-import OsOverlay from './components/OsOverlay.js';
+import Panel from './ui-components/Panel.js';
+import OsOverlay from './ui-components/OsOverlay.js';
 
 import HasEvents from '../traits/HasEvents';
 
