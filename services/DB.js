@@ -3,7 +3,7 @@ import sha256 from 'js-sha256';
 import axios from 'axios';
 import diff_match_patch from 'diff-match-patch';
 
-import IndexedDB from './DbDrivers/IndexedDB';
+import IndexedDB from './db-drivers/IndexedDB';
 import HasEvents from '../traits/HasEvents';
 
 class DB
