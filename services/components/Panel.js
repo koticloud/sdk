@@ -111,11 +111,11 @@ class Panel extends Component
         this._ui.confirm(confirmation)
             .then(async (res) => {
                 // Erase local app data (the App DB)
-                if (!$kotiCloudApp.db) {
+                if (!this._app.db) {
                     return this._onLocalDataCleared();
                 }
 
-                await $kotiCloudApp.db.wipe();
+                await this._app.db.wipe();
 
                 return this._onLocalDataCleared();
                 // TODO: Now I need access to app.db / db directly. Doesn't sound like a good thing to inject it here. Can we make a global window.app in App.init() (window.app = this)? Is it a good idea?

@@ -2,6 +2,7 @@ class Component
 {
     constructor(ui) {
         this._ui = ui;
+        this._app = ui.getApp()
         this._body = document.querySelector('body');
         this._el = null;
     }

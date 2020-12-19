@@ -1,7 +1,9 @@
 import Panel from './components/Panel.js';
 
 class UI {
-    constructor() {
+    constructor(app) {
+        this._app = app;
+
         this._openDialogsCount = 0;
         this.overlayEl = null;
         this.notificationsContainerEl = null;
@@ -55,6 +57,10 @@ class UI {
 
         // This will tell us the the UI component has been initialized
         body.classList.add('koti-cloud-sdk-ui--initialized');
+    }
+
+    getApp() {
+        return this._app;
     }
 
     _showOverlay() {
