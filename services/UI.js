@@ -1,4 +1,7 @@
 import Panel from './components/Panel.js';
+import OsOverlay from './components/OsOverlay.js';
+
+import HasEvents from '../traits/HasEvents';
 
 class UI {
     constructor(app) {
@@ -10,6 +13,7 @@ class UI {
 
         this._components = [
             new Panel(this),
+            new OsOverlay(this),
         ];
 
         this._initialize();
@@ -20,7 +24,7 @@ class UI {
 
         // Prevent multiple initialization (this class is only appended after
         // an initialization)
-        if (body.classList.contains('koti-cloud-sdk-ui--initialized')) {
+        if (body.classList.contains('koti-cloud-sdk-ui')) {
             // Get the existing elements
             this.overlayEl = document.querySelector('.koti-cloud-sdk-ui--overlay');
             this.notificationsContainerEl = document.querySelector('.koti-cloud-sdk-ui--notifications-container');
@@ -40,13 +44,8 @@ class UI {
         this.notificationsContainerEl = document.createElement('div');
         this.notificationsContainerEl.classList.add('koti-cloud-sdk-ui--notifications-container');
 
-        // this.panelEl = document.createElement('div');
-        // this.panelEl.classList.add('koti-cloud-sdk-ui--panel');
-        // this.panelEl.innerHTML = this._getPanel();
-
         body.appendChild(this.overlayEl);
         body.appendChild(this.notificationsContainerEl);
-        // body.appendChild(this.panelEl);
 
         // Close notifications on click
         this.notificationsContainerEl.addEventListener('click', (e) => {
@@ -56,7 +55,7 @@ class UI {
         });
 
         // This will tell us the the UI component has been initialized
-        body.classList.add('koti-cloud-sdk-ui--initialized');
+        body.classList.add('koti-cloud-sdk-ui');
     }
 
     getApp() {
@@ -308,5 +307,10 @@ class UI {
         return this.overlayEl.classList.contains('show');
     }
 }
+
+/**
+ * Traits
+ */
+Object.assign(UI.prototype, HasEvents);
 
 export default UI;

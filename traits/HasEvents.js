@@ -1,7 +1,7 @@
 export default {
     _eventSubscriptions: {},
 
-    _emit(event) {
+    emit(event) {
         if (!this._eventSubscriptions[event]) {
             return;
         }

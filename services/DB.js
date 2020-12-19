@@ -576,7 +576,7 @@ class DB
 
         this._validating = false;
 
-        this._emit('synced');
+        this.emit('synced');
 
         return true;
     }
@@ -654,7 +654,7 @@ class DB
 
         this._syncing = false;
 
-        this._emit('synced');
+        this.emit('synced');
 
         return true;
     }
@@ -897,7 +897,7 @@ class DB
     async wipe() {
         await this._driver.wipeDb();
 
-        this._emit('synced');
+        this.emit('synced');
 
         return true;
     }
@@ -912,6 +912,9 @@ class DB
     }
 }
 
+/**
+ * Traits
+ */
 Object.assign(DB.prototype, HasEvents);
 
 export default DB;
