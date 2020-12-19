@@ -1,5 +1,5 @@
-import App from './services/App';
-import DB from './services/DB';
-import UI from './services/UI';
+import App from './modules/App';
+import DB from './modules/DB';
+import UI from './modules/UI';
 
 export { App, DB, UI };
