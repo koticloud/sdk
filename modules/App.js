@@ -47,6 +47,10 @@ class App {
             this._syncDbOnAppStart();
         }
 
+        if (this.info) {
+            App.setTitle(this.info.name);
+        }
+
         this._initialized = true;
     }
 
@@ -96,6 +100,7 @@ class App {
      * Read cached values (info about the app etc)
      */
     _readCachedAppInfo() {
+        this.info = JSON.parse(localStorage.getItem(this.localStorage.appInfo));
         this.installedVersion = localStorage.getItem(this.localStorage.appVersion);
     }
 
@@ -128,8 +133,13 @@ class App {
 
         try {
             this.info = await this._fetchUpdatedAppInfo();
+            localStorage.setItem(this.localStorage.appInfo, JSON.stringify(this.info));
             
             this.latestVersion = this.info.version;
+
+            if (this.info) {
+                App.setTitle(this.info.name);
+            }
         } catch (error) {
             // Ignore exception
             console.error('Error while fetching current app info!');
@@ -273,6 +283,16 @@ class App {
                 console.log(error);
             }
         }
+    }
+
+    static setTitle(title) {
+        const el = document.querySelector('.koti-cloud-sdk-ui--panel--app-title');
+
+        if (!el) {
+            return;
+        }
+
+        el.innerText = title;
     }
 }
 

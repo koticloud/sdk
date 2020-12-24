@@ -189,6 +189,7 @@
 
 .koti-cloud-sdk-ui--panel {
     z-index: 2147483647; /* Max value is 2147483647 */
+    display: flex;
     left: 0;
     top: 0;
     width: 100%;
@@ -197,6 +198,15 @@
     border-bottom: 2px solid transparent;
     color: #ddd;
     font-size: .9rem;
+
+    &--left {
+        flex: 1;
+    }
+
+    &--btn-link, &--app-title {
+        padding: .25rem;
+        margin: 0 .25rem;
+    }
 
     &--btn-link {
         background: none;
@@ -207,8 +217,6 @@
         font-family: inherit;
         color: #ddd;
         cursor: pointer;
-        margin: 0 .25rem;
-        padding: .25rem;
 
         &:hover {
             border-bottom: 2px solid $infoBlue;

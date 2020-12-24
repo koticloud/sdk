@@ -37,7 +37,13 @@ class Panel extends Component
      */
     _getTemplate() {
         return `
-            <a href="#" class="koti-cloud-sdk-ui--panel--btn-link koti-cloud-sdk-ui--panel--btn-koti-cloud">Koti Cloud</a>
+            <div class="koti-cloud-sdk-ui--panel--left">
+                <a href="#" class="koti-cloud-sdk-ui--panel--btn-link koti-cloud-sdk-ui--panel--btn-koti-cloud">Koti Cloud</a>
+            </div>
+
+            <div class="koti-cloud-sdk-ui--panel--right">
+                <span class="koti-cloud-sdk-ui--panel--app-title koti-cloud-sdk-ui--noselect"></span>
+            </div>
         `;
     }
 
