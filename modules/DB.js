@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import sha256 from 'js-sha256';
 import axios from 'axios';
-import diff_match_patch from 'diff-match-patch';
+// import diff_match_patch from 'diff-match-patch';
 
 import IndexedDB from './db-drivers/IndexedDB';
 import HasEvents from '../traits/HasEvents';
