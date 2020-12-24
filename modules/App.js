@@ -47,11 +47,11 @@ class App {
             this._syncDbOnAppStart();
         }
 
-        if (this.info) {
-            App.setTitle(this.info.name);
-        }
-
         this._initialized = true;
+
+        // Make the current instance accessible statically
+        App._instance = this;
+        App.setTitle();
     }
 
     /**
@@ -136,10 +136,7 @@ class App {
             localStorage.setItem(this.localStorage.appInfo, JSON.stringify(this.info));
             
             this.latestVersion = this.info.version;
-
-            if (this.info) {
-                App.setTitle(this.info.name);
-            }
+            App.setTitle();
         } catch (error) {
             // Ignore exception
             console.error('Error while fetching current app info!');
@@ -285,14 +282,31 @@ class App {
         }
     }
 
-    static setTitle(title) {
+    /**
+     * Set the Panel ("title bar") app title
+     * 
+     * @param {string} title 
+     */
+    static setTitle(title = null) {
         const el = document.querySelector('.koti-cloud-sdk-ui--panel--app-title');
 
         if (!el) {
             return;
         }
 
-        el.innerText = title;
+        const appName = (App._instance && App._instance.info && App._instance.info.name)
+            ? App._instance.info.name
+            : null;
+
+        let finalTitle;
+
+        if (appName && title) {
+            finalTitle = `${appName} | ${title}`;
+        } else {
+            finalTitle = appName ? appName : title;
+        }
+
+        el.innerText = finalTitle;
     }
 }
 

@@ -1,5 +1,6 @@
 import { get } from 'svelte/store';
 
+import App from '../../../App.js';
 import { Pages } from './Pages.js';
 import { CurrentPage } from './CurrentPage.js';
 
@@ -43,11 +44,15 @@ class Navigator {
     }
 
     static goTo(name) {
-        if (!get(Pages)[name]) {
+        const page = get(Pages)[name];
+
+        if (!page) {
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
         }
 
-        CurrentPage.set(get(Pages)[name]);
+        CurrentPage.set(page);
+
+        App.setTitle(page.title);
 
         history.pushState({}, '', `#${name}`)
     }
