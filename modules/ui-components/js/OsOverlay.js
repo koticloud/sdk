@@ -15,7 +15,7 @@ class OsOverlay extends Component
      * @return string
      */
     _getClass() {
-        return 'koti-cloud-sdk-ui--os-overlay';
+        return 'kc--os-overlay';
     }
 
     /**
@@ -40,8 +40,8 @@ class OsOverlay extends Component
      */
     _getTemplate() {
         return `
-            <div class="koti-cloud-sdk-ui--os-overlay--actions">
-                <a href="#" class="koti-cloud-sdk-ui--os-overlay--btn-link koti-cloud-sdk-ui--os-overlay--actions--clear-local-data">Clear Local Data</a>
+            <div class="kc--os-overlay--actions">
+                <a href="#" class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data">Clear Local Data</a>
             </div>
         `;
     }
@@ -59,13 +59,13 @@ class OsOverlay extends Component
 
         // Close overlay on empty space click
         this._el.addEventListener('click', (e) => {
-            if (e.target.classList.contains('koti-cloud-sdk-ui--os-overlay')) {
+            if (e.target.classList.contains('kc--os-overlay')) {
                 this._toggleSelf();
             }
         });
 
         // On "Clear Local Data" press
-        document.querySelector('.koti-cloud-sdk-ui--os-overlay--actions--clear-local-data')
+        document.querySelector('.kc--os-overlay--actions--clear-local-data')
             .addEventListener('click', (e) => {
                 e.preventDefault();
 
@@ -74,14 +74,14 @@ class OsOverlay extends Component
     }
 
     _toggleSelf() {
-        if (!this._el.classList.contains('koti-cloud-sdk-ui--os-overlay--show')) {
-            const offset = document.querySelector('.koti-cloud-sdk-ui--panel')
+        if (!this._el.classList.contains('kc--os-overlay--show')) {
+            const offset = document.querySelector('.kc--panel')
                 .clientHeight + 2; // 2px = border-bottom height
 
             this._el.style.marginTop = `${offset}px`;
         }
 
-        this._el.classList.toggle('koti-cloud-sdk-ui--os-overlay--show');
+        this._el.classList.toggle('kc--os-overlay--show');
     }
 
     _clearLocalData() {

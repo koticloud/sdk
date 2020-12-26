@@ -12,7 +12,7 @@ class Panel extends Component
      * @return string
      */
     _getClass() {
-        return 'koti-cloud-sdk-ui--panel';
+        return 'kc--panel';
     }
 
     /**
@@ -37,12 +37,12 @@ class Panel extends Component
      */
     _getTemplate() {
         return `
-            <div class="koti-cloud-sdk-ui--panel--left">
-                <a href="#" class="koti-cloud-sdk-ui--panel--btn-link koti-cloud-sdk-ui--panel--btn-koti-cloud">Koti Cloud</a>
+            <div class="kc--panel--left">
+                <a href="#" class="kc--panel--btn-link kc--panel--btn-koti-cloud">Koti Cloud</a>
             </div>
 
-            <div class="koti-cloud-sdk-ui--panel--right">
-                <span class="koti-cloud-sdk-ui--panel--app-title koti-cloud-sdk-ui--noselect"></span>
+            <div class="kc--panel--right">
+                <span class="kc--panel--app-title"></span>
             </div>
         `;
     }
@@ -53,7 +53,7 @@ class Panel extends Component
      * @return void
      */
     _registerEvents() {
-        document.querySelector('.koti-cloud-sdk-ui--panel--btn-koti-cloud')
+        document.querySelector('.kc--panel--btn-koti-cloud')
             .addEventListener('click', (e) => {
                 e.preventDefault();
 

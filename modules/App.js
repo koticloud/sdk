@@ -288,7 +288,7 @@ class App {
      * @param {string} title 
      */
     static setTitle(title = null) {
-        const el = document.querySelector('.koti-cloud-sdk-ui--panel--app-title');
+        const el = document.querySelector('.kc--panel--app-title');
 
         if (!el) {
             return;
@@ -307,6 +307,7 @@ class App {
         }
 
         el.innerText = finalTitle;
+        el.title = finalTitle;
     }
 }
 

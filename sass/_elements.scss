@@ -1,9 +1,9 @@
-.koti-cloud-sdk-ui {
+.kc {
     display: flex;
     flex-direction: column;
 }
 
-.koti-cloud-sdk-ui--overlay {
+.kc--overlay {
     position: fixed;
     width: 100%;
     height: 100%;
@@ -23,7 +23,7 @@
     }
 }
 
-.koti-cloud-sdk-ui--dialog {
+.kc--dialog {
     background: #fff;
     border-radius: .5rem;
     padding: 1rem;
@@ -92,7 +92,7 @@
     }
 }
 
-.koti-cloud-sdk-ui--notifications-container {
+.kc--notifications-container {
     position: fixed;
     margin: 1rem;
     right: 0;
@@ -110,7 +110,7 @@
         max-width: 25%;
     }
 
-    .koti-cloud-sdk-ui--notification {
+    .kc--notification {
         @include noselect;
 
         margin-top: .5rem;
@@ -133,7 +133,7 @@
     }
 }
 
-.koti-cloud-sdk-ui--os-overlay {
+.kc--os-overlay {
     z-index: 2147483647; /* Max value is 2147483647 */
     position: fixed;
     width: 100%;
@@ -152,9 +152,10 @@
     }
 
     &--show {
+        @include noselect;
         transform: translateY(0%);
 
-        .koti-cloud-sdk-ui--os-overlay--actions {
+        .kc--os-overlay--actions {
             opacity: 100;
         }
     }
@@ -187,7 +188,9 @@
     }
 }
 
-.koti-cloud-sdk-ui--panel {
+.kc--panel {
+    @include noselect;
+
     z-index: 2147483647; /* Max value is 2147483647 */
     display: flex;
     left: 0;

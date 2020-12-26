@@ -24,10 +24,10 @@ class UI {
 
         // Prevent multiple initialization (this class is only appended after
         // an initialization)
-        if (body.classList.contains('koti-cloud-sdk-ui')) {
+        if (body.classList.contains('kc')) {
             // Get the existing elements
-            this.overlayEl = document.querySelector('.koti-cloud-sdk-ui--overlay');
-            this.notificationsContainerEl = document.querySelector('.koti-cloud-sdk-ui--notifications-container');
+            this.overlayEl = document.querySelector('.kc--overlay');
+            this.notificationsContainerEl = document.querySelector('.kc--notifications-container');
 
             return;
         }
@@ -39,23 +39,23 @@ class UI {
         }
 
         this.overlayEl = document.createElement('div');
-        this.overlayEl.classList.add('koti-cloud-sdk-ui--overlay');
+        this.overlayEl.classList.add('kc--overlay');
 
         this.notificationsContainerEl = document.createElement('div');
-        this.notificationsContainerEl.classList.add('koti-cloud-sdk-ui--notifications-container');
+        this.notificationsContainerEl.classList.add('kc--notifications-container');
 
         body.appendChild(this.overlayEl);
         body.appendChild(this.notificationsContainerEl);
 
         // Close notifications on click
         this.notificationsContainerEl.addEventListener('click', (e) => {
-            if (e.target.classList.contains('koti-cloud-sdk-ui--notification')) {
+            if (e.target.classList.contains('kc--notification')) {
                 this._closeNotification(e.target);
             }
         });
 
         // This will tell us the the UI component has been initialized
-        body.classList.add('koti-cloud-sdk-ui');
+        body.classList.add('kc');
     }
 
     getApp() {
@@ -79,12 +79,12 @@ class UI {
     confirm(msg, id = null) {
         // Dialog container
         const dialogEl = document.createElement('div');
-        dialogEl.classList.add('koti-cloud-sdk-ui--dialog');
+        dialogEl.classList.add('kc--dialog');
 
         // If an id was specified
         if (id) {
             // If dialog with this id already exists - don't create a new one
-            if (document.querySelector(`.koti-cloud-sdk-ui--dialog[data-id="${id}"]`)) {
+            if (document.querySelector(`.kc--dialog[data-id="${id}"]`)) {
                 return new Promise((resolve, reject) => {
                     reject();
                 });
@@ -95,20 +95,20 @@ class UI {
 
         // Dialog body container
         const bodyEl = document.createElement('div');
-        bodyEl.classList.add('koti-cloud-sdk-ui--dialog--body');
+        bodyEl.classList.add('kc--dialog--body');
         bodyEl.innerText = msg;
 
         // Dialog buttons container
         const buttonsEl = document.createElement('div');
-        buttonsEl.classList.add('koti-cloud-sdk-ui--dialog--buttons');
+        buttonsEl.classList.add('kc--dialog--buttons');
 
         // Dialog buttons
         const btnYes = document.createElement('button');
-        btnYes.classList.add('koti-cloud-sdk-ui--dialog--button');
+        btnYes.classList.add('kc--dialog--button');
         btnYes.innerText = 'Yes';
 
         const btnNo = document.createElement('button');
-        btnNo.classList.add('koti-cloud-sdk-ui--dialog--button');
+        btnNo.classList.add('kc--dialog--button');
         btnNo.innerText = 'No';
 
         // Append elements
@@ -164,7 +164,7 @@ class UI {
     select(options, id = null) {
         // If dialog with the specified id already exists - don't create a new
         // one
-        if (id && document.querySelector(`.koti-cloud-sdk-ui--dialog[data-id="${id}"]`)) {
+        if (id && document.querySelector(`.kc--dialog[data-id="${id}"]`)) {
             return new Promise((resolve, reject) => {
                 reject();
             });
@@ -176,7 +176,7 @@ class UI {
 
         // Dialog container
         const dialogEl = document.createElement('div');
-        dialogEl.classList.add('koti-cloud-sdk-ui--dialog');
+        dialogEl.classList.add('kc--dialog');
 
         // If an id was specified
         if (id) {
@@ -188,16 +188,16 @@ class UI {
 
         if (title) {
             titleEl = document.createElement('div');
-            titleEl.classList.add('koti-cloud-sdk-ui--dialog--title');
+            titleEl.classList.add('kc--dialog--title');
             titleEl.innerText = title;
         }
 
         // Dialog body container
         const bodyEl = document.createElement('div');
-        bodyEl.classList.add('koti-cloud-sdk-ui--dialog--body');
+        bodyEl.classList.add('kc--dialog--body');
 
         const list = document.createElement('ul');
-        list.classList.add('koti-cloud-sdk-ui--dialog--select-list');
+        list.classList.add('kc--dialog--select-list');
 
         for (let value of Object.keys(options)) {
             const li = document.createElement('li');
@@ -215,11 +215,11 @@ class UI {
 
         // Dialog buttons container
         const buttonsEl = document.createElement('div');
-        buttonsEl.classList.add('koti-cloud-sdk-ui--dialog--buttons');
+        buttonsEl.classList.add('kc--dialog--buttons');
 
         // Dialog buttons
         const btnCancel = document.createElement('button');
-        btnCancel.classList.add('koti-cloud-sdk-ui--dialog--button');
+        btnCancel.classList.add('kc--dialog--button');
         btnCancel.innerText = 'Cancel';
 
         buttonsEl.appendChild(btnCancel);
@@ -275,7 +275,7 @@ class UI {
 
     notify(text, type = 'info') {
         const notification = document.createElement('div');
-        notification.classList.add('koti-cloud-sdk-ui--notification');
+        notification.classList.add('kc--notification');
         notification.classList.add(type);
         notification.innerText = text;
 
