@@ -3,5 +3,5 @@
 </script>
 
 {#if $CurrentPage}
-    <svelte:component this={$CurrentPage.component}/>
+    <svelte:component this={$CurrentPage.component} />
 {/if}

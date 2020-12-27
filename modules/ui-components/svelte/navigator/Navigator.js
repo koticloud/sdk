@@ -43,14 +43,18 @@ class Navigator {
         return flat;
     }
 
-    static goTo(name) {
+    static getCurrentPage() {
+        return get(CurrentPage);
+    }
+
+    static goTo(name, params = {}) {
         const page = get(Pages)[name];
 
         if (!page) {
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
         }
 
-        CurrentPage.set(page);
+        CurrentPage.set(Object.assign({}, page, { params }));
 
         App.setTitle(page.title);
 

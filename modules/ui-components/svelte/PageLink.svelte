@@ -2,9 +2,13 @@
     import Navigator from './navigator/Navigator.js';
 
     export let to;
+    export let params = {};
+    export let beforeNavigation = () => true;
 
     function navigate() {
-        Navigator.goTo(to);
+        if (beforeNavigation() === true) {
+            Navigator.goTo(to, params);
+        }
     }
 </script>
 
