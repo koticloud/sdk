@@ -5,12 +5,37 @@ import { Pages } from './Pages.js';
 import { CurrentPage } from './CurrentPage.js';
 
 class Navigator {
+    static _onBeforeGoingBack = {};
+    static _goingForward = false;
+
     static init() {
         if (this._initialized) {
             return;
         }
 
-        window.addEventListener('popstate', (event) => {
+        window.addEventListener('popstate', async (event) => {
+            // Ignore `history.go(1)`
+            if (Navigator._goingForward) {
+                Navigator._goingForward = false;
+
+                return;
+            }
+
+            const beforeGoingBack = Navigator._onBeforeGoingBack[
+                get(CurrentPage).name
+            ];
+
+            if (beforeGoingBack && !await beforeGoingBack()) {
+                Navigator._goingForward = true;
+
+                event.preventDefault();
+                // Will trigger popstate again, which is ignore by setting
+                // Navigator._goingForward to `true`
+                history.go(1);
+
+                return;
+            }
+
             this._onBackButton(event);
         });
 
@@ -70,6 +95,10 @@ class Navigator {
         if (get(CurrentPage).parent) {
             this.goBack();
         }
+    }
+
+    static beforeGoingBack(callback) {
+        Navigator._onBeforeGoingBack[get(CurrentPage).name] = callback;
     }
 }
 
