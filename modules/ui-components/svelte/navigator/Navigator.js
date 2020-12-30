@@ -1,12 +1,14 @@
 import { get } from 'svelte/store';
 
 import App from '../../../App.js';
+// Svelte stores
 import { Pages } from './Pages.js';
 import { CurrentPage } from './CurrentPage.js';
 
 class Navigator {
     static _onBeforeGoingBack = {};
     static _goingForward = false;
+    static _closeAppOnBackNavigation = false;
 
     static init() {
         if (this._initialized) {
@@ -83,7 +85,12 @@ class Navigator {
 
         App.setTitle(page.title);
 
-        history.pushState({}, '', `#${name}`)
+        history.pushState({}, '', `#${name}`);
+
+        // If this is not a root level page
+        if (page.parent) {
+            Navigator._closeAppOnBackNavigation = false;
+        }
     }
 
     static goBack() {
@@ -94,6 +101,18 @@ class Navigator {
         // If the current page has a parent page - go one level up
         if (get(CurrentPage).parent) {
             this.goBack();
+        } else {
+            // If there's no parent = we're at the root level -> close the app
+            // on two back button presses in a row
+            if (Navigator._closeAppOnBackNavigation) {
+                window.close();
+            } else {
+                if (App._instance) {
+                    App._instance.ui.notify('Press back button again to close the app');
+                }
+
+                Navigator._closeAppOnBackNavigation = true;
+            }
         }
     }
 
