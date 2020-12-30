@@ -42,6 +42,8 @@ class OsOverlay extends Component
         return `
             <div class="kc--os-overlay--actions">
                 <a href="#" class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data">Clear Local Data</a>
+
+                <a href="#" class="kc--os-overlay--btn-link kc--os-overlay--actions--force-update">Force-Update</a>
             </div>
         `;
     }
@@ -64,12 +66,19 @@ class OsOverlay extends Component
             }
         });
 
-        // On "Clear Local Data" press
+        // App control buttons on the overlay
         document.querySelector('.kc--os-overlay--actions--clear-local-data')
             .addEventListener('click', (e) => {
                 e.preventDefault();
 
                 this._clearLocalData();
+            });
+
+        document.querySelector('.kc--os-overlay--actions--force-update')
+            .addEventListener('click', (e) => {
+                e.preventDefault();
+
+                this._forceUpdate();
             });
     }
 
@@ -100,6 +109,28 @@ class OsOverlay extends Component
 
                 return this._onLocalDataCleared();
                 // TODO: Now I need access to app.db / db directly. Doesn't sound like a good thing to inject it here. Can we make a global window.app in App.init() (window.app = this)? Is it a good idea?
+            })
+            .catch(err => {
+                console.log(err);
+                // Do nothing
+            });
+    }
+
+    _forceUpdate() {
+        this._toggleSelf();
+
+        const confirmation = 'Koti Cloud apps are cached on the device (in the browser) which allows them to work offline. Moreover, the cached files are used even when you\'re online. Normally Koti Cloud will tell you when there\'s an app update. In a rare case that something went wrong or you just need to, you can clear the local cache and refetch the up to date files from the server. Continue?';
+
+        this._ui.confirm(confirmation)
+            .then(async (res) => {
+                // App cannot be updated (refetched) while offline
+                if (!this._app.isOnline()) {
+                    this._ui.notify('You cannot update your apps while being offline!', 'error');
+
+                    return;
+                }
+
+                this._app.update();
             })
             .catch(err => {
                 console.log(err);

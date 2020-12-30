@@ -246,7 +246,7 @@ class App {
                     }
 
                     // Update version number in localStorage
-                    this._updateLocalVersion(this.latestVersion. this.latestSdkVersion);
+                    this._updateLocalVersion(this.latestVersion, this.latestSdkVersion);
 
                     // Ask the user a permission to restart the app now
                     const msg = `The app will be updated on the next restart. The operation requires internet connection and might take some time. Do you want to restart now?`;
@@ -274,9 +274,15 @@ class App {
      * @param {string} newVersion
      * @param {string} newSdkVersion
      */
-    _updateLocalVersion(newVersion, newSdkVersion) {
-        localStorage.setItem(this.localStorage.appVersion, newVersion);
-        localStorage.setItem(this.localStorage.appSdkVersion, newSdkVersion);
+    _updateLocalVersion(newVersion = null, newSdkVersion = null) {
+        localStorage.setItem(
+            this.localStorage.appVersion,
+            newVersion ? newVersion : ''
+        );
+        localStorage.setItem(
+            this.localStorage.appSdkVersion,
+            newSdkVersion ? newSdkVersion : ''
+        );
     }
 
     async _syncDbOnAppStart() {
