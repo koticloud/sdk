@@ -14,10 +14,13 @@ class App {
         this.info = {};
         this.installedVersion = null;
         this.latestVersion = null;
+        this.installedSdkVersion = null;
+        this.latestSdkVersion = null;
 
         this.localStorage = {
             appInfo: 'app.info',
             appVersion: 'app.version',
+            appSdkVersion: 'app.sdk_version',
         };
 
         // Modules
@@ -102,6 +105,7 @@ class App {
     _readCachedAppInfo() {
         this.info = JSON.parse(localStorage.getItem(this.localStorage.appInfo));
         this.installedVersion = localStorage.getItem(this.localStorage.appVersion);
+        this.installedSdkVersion = localStorage.getItem(this.localStorage.appSdkVersion);
     }
 
     /**
@@ -130,12 +134,15 @@ class App {
         }
 
         this.latestVersion = this.installedVersion;
+        this.latestSdkVersion = this.installedSdkVersion;
 
         try {
             this.info = await this._fetchUpdatedAppInfo();
             localStorage.setItem(this.localStorage.appInfo, JSON.stringify(this.info));
             
             this.latestVersion = this.info.version;
+            this.latestSdkVersion = this.info.version;
+
             App.setTitle();
         } catch (error) {
             // Ignore exception
@@ -143,7 +150,10 @@ class App {
         }
 
         return new Promise((resolve, reject) => {
-            resolve(this.latestVersion != this.installedVersion);
+            resolve(
+                this.latestVersion != this.installedVersion
+                || this.latestSdkVersion != this.installedSdkVersion
+            );
         });
     }
 
@@ -167,7 +177,7 @@ class App {
             // installing the app for the first time. In this case just update
             // the local version and don't suggest to update.
             if (this.installedVersion === null) {
-                this._updateLocalVersion(this.latestVersion);
+                this._updateLocalVersion(this.latestVersion, this.latestSdkVersion);
 
                 return false;
             }
@@ -236,7 +246,7 @@ class App {
                     }
 
                     // Update version number in localStorage
-                    this._updateLocalVersion(this.latestVersion);
+                    this._updateLocalVersion(this.latestVersion. this.latestSdkVersion);
 
                     // Ask the user a permission to restart the app now
                     const msg = `The app will be updated on the next restart. The operation requires internet connection and might take some time. Do you want to restart now?`;
@@ -261,10 +271,12 @@ class App {
     /**
      * Update app's version in LocalStorage
      * 
-     * @param {string} newVersion 
+     * @param {string} newVersion
+     * @param {string} newSdkVersion
      */
-    _updateLocalVersion(newVersion) {
+    _updateLocalVersion(newVersion, newSdkVersion) {
         localStorage.setItem(this.localStorage.appVersion, newVersion);
+        localStorage.setItem(this.localStorage.appSdkVersion, newSdkVersion);
     }
 
     async _syncDbOnAppStart() {
