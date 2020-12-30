@@ -320,6 +320,10 @@ class App {
 
         el.innerText = finalTitle;
         el.title = finalTitle;
+
+        if (finalTitle) {
+            document.title = finalTitle;
+        }
     }
 }
 
