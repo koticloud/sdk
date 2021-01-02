@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import sha256 from 'js-sha256';
-import axios from 'axios';
 // import diff_match_patch from 'diff-match-patch';
 
 import IndexedDB from './db-drivers/IndexedDB';
 import HasEvents from '../traits/HasEvents';
+import Api from './Api';
 
 class DB
 {
@@ -565,7 +565,7 @@ class DB
         const docIds = allDocs.docs.map(item => item._id);
 
         // Upload the data
-        const response = await axios.post('/api/apps/db/validate-docs', {
+        const response = await Api.post('/api/apps/db/validate-docs', {
             docs: docIds,
         }, {
             timeout: 1000 * 30, // Timeout 30 seconds
@@ -621,7 +621,7 @@ class DB
         docsToUpload = docsToUpload.docs;
 
         // Upload the data
-        const response = await axios.post('/api/apps/db/sync/lww', {
+        const response = await Api.post('/api/apps/db/sync/lww', {
             last_sync_at: lastSyncAt,
             uploads: docsToUpload,
         }, {
@@ -773,7 +773,7 @@ class DB
     //         }
     //     }
 
-    //     const response = await axios.post('/api/apps/db/sync/diff', {
+    //     const response = await Api.post('/api/apps/db/sync/diff', {
     //         revs: revs,
     //     });
 
@@ -810,7 +810,7 @@ class DB
     //         }
     //     }
 
-    //     await axios.post('/api/apps/db/sync/upload', {
+    //     await Api.post('/api/apps/db/sync/upload', {
     //         docs: docs,
     //     });
 
@@ -825,7 +825,7 @@ class DB
     //         return true;
     //     }
 
-    //     const response = await axios.post('/api/apps/db/sync/download', {
+    //     const response = await Api.post('/api/apps/db/sync/download', {
     //         docs: download,
     //     });
 

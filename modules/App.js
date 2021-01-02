@@ -1,4 +1,4 @@
-import axios from 'axios';
+import Api from './Api';
 import DB from './DB';
 import UI from './UI';
 
@@ -201,7 +201,7 @@ class App {
      */
     async _fetchUpdatedAppInfo() {
         return new Promise((resolve, reject) => {
-            axios.get(`${this.baseUrl}/api/apps/current`)
+            Api.get(`${this.baseUrl}/api/apps/current`)
                 .then(response => {
                     resolve(response.data);
                 })
