@@ -6,7 +6,7 @@ import { Pages } from './Pages.js';
 import { CurrentPage } from './CurrentPage.js';
 
 class Navigator {
-    static _onBeforeGoingBack = {};
+    static _onAfterNavigation = {};
     static _goingForward = false;
     static _closeAppOnBackNavigation = false;
 
@@ -23,19 +23,19 @@ class Navigator {
                 return;
             }
 
-            const beforeGoingBack = Navigator._onBeforeGoingBack[
-                get(CurrentPage).name
-            ];
+            const beforeLeaving = get(CurrentPage).beforeLeaving;
 
-            if (beforeGoingBack && !await beforeGoingBack()) {
-                Navigator._goingForward = true;
+            if (beforeLeaving) {
+                if ((beforeLeaving.constructor.name === 'AsyncFunction' && !await beforeLeaving()) || !beforeLeaving()) {
+                    Navigator._goingForward = true;
 
-                event.preventDefault();
-                // Will trigger popstate again, which is ignore by setting
-                // Navigator._goingForward to `true`
-                history.go(1);
+                    event.preventDefault();
+                    // Will trigger popstate again, which is ignore by setting
+                    // Navigator._goingForward to `true`
+                    history.go(1);
 
-                return;
+                    return;
+                }
             }
 
             this._onBackButton(event);
@@ -74,7 +74,7 @@ class Navigator {
         return get(CurrentPage);
     }
 
-    static goTo(name, params = {}) {
+    static async goTo(name, params = {}) {
         const page = get(Pages)[name];
 
         if (!page) {
@@ -90,6 +90,10 @@ class Navigator {
         // If this is not a root level page
         if (page.parent) {
             Navigator._closeAppOnBackNavigation = false;
+        }
+
+        if (Navigator._onAfterNavigation) {
+            Navigator._onAfterNavigation();
         }
     }
 
@@ -116,8 +120,25 @@ class Navigator {
         }
     }
 
-    static beforeGoingBack(callback) {
-        Navigator._onBeforeGoingBack[get(CurrentPage).name] = callback;
+    /**
+     * Attach a beforeLeaving callback to the current page
+     * 
+     * @param {function} callback 
+     */
+    static beforeLeaving(callback) {
+        const pages = get(Pages);
+
+        pages[get(CurrentPage).name].beforeLeaving = callback;
+        get(CurrentPage).beforeLeaving = callback;
+    }
+
+    /**
+     * Add a global afterNavigation callback
+     * 
+     * @param {function} callback 
+     */
+    static afterNavigation(callback) {
+        Navigator._onAfterNavigation = callback;
     }
 }
 
