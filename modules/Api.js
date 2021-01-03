@@ -1,28 +1,75 @@
 import axios from 'axios';
 import ApiMock from './mocks/ApiMock';
 
-class Api
-{
-    static get(url, options = {}) {
-        if (this._isLocalhost()) {
-            return ApiMock.get(url, options);
-        }
+class Api {
+    /**
+     * Get the API's base URL
+     * 
+     * @return {string}
+     */
+    static baseUrl() {
+        const locationPaths = location.host.split('\.');
 
-        return axios.get(url, options);
-    }
-
-    static post(url, data = {}, options = {}) {
-        if (this._isLocalhost()) {
-            return ApiMock.post(url, data, options);
-        }
-
-        return axios.post(url, data, options);
+        return `${location.protocol}//${locationPaths.slice(-2).join('\.')}`;
     }
 
     /**
-     * Determine whether the app is ran on localhost (dev mode)
+     * Get current app info
+     * 
+     * @return {Promise}
      */
-    static _isLocalhost() {
+    static getCurrentAppInfo() {
+        if (this._shouldMock()) {
+            return ApiMock.getCurrentAppInfo();
+        }
+
+        return axios.get(`${this.baseUrl()}/api/apps/current`);
+    }
+
+    /**
+     * Sync the DB: Last-Write-Wins approach
+     * 
+     * @param {integer} lastSyncAt timestamp
+     * @param {array} docsToUpload
+     * 
+     * @return {Promise}
+     */
+    static syncLww(lastSyncAt, docsToUpload) {
+        if (this._shouldMock()) {
+            return ApiMock.syncLww();
+        }
+
+        return axios.post('/api/apps/db/sync/lww', {
+            last_sync_at: lastSyncAt,
+            uploads: docsToUpload,
+        }, {
+            timeout: 1000 * 30, // Timeout 30 seconds
+        });
+    }
+
+    /**
+     * Validate user's local docs on the server
+     * 
+     * @param {array} docIds
+     * 
+     * @return {Promise}
+     */
+    static validateDocs(docIds) {
+        if (this._shouldMock()) {
+            return ApiMock.validateDocs();
+        }
+
+        return axios.post('/api/apps/db/validate-docs', {
+            docs: docIds,
+        }, {
+            timeout: 1000 * 30, // Timeout 30 seconds
+        });
+    }
+
+    /**
+     * Determine whether the API class should be mocked
+     */
+    static _shouldMock() {
         return location.hostname === 'localhost';
     }
 }

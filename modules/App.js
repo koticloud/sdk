@@ -6,7 +6,6 @@ class App {
     constructor() {
         this._initialized = false;
 
-        this.baseUrl = '';
         this.ui = null;
         this._cacheables = {};
 
@@ -40,9 +39,6 @@ class App {
         this.ui = new UI(this);
 
         this._registerServiceWorker(options.serviceWorker);
-
-        const locationPaths = location.host.split('\.');
-        this.baseUrl = `${location.protocol}//${locationPaths.slice(-2).join('\.')}`;
 
         if (options.db) {
             this.db = new DB(options.db);
@@ -201,7 +197,7 @@ class App {
      */
     async _fetchUpdatedAppInfo() {
         return new Promise((resolve, reject) => {
-            Api.get(`${this.baseUrl}/api/apps/current`)
+            Api.getCurrentAppInfo()
                 .then(response => {
                     resolve(response.data);
                 })

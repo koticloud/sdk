@@ -1,31 +1,65 @@
 class ApiMock
 {
-    static routes = {
-        '/api/apps/current': this._currentAppInfoResponse,
-    };
+    /**
+     * Get current app info
+     * 
+     * @return {Promise}
+     */
+    static getCurrentAppInfo() {
+        return new Promise((resolve, reject) => {
+            const response = {
+                data: {
+                    name: 'Koti Cloud App',
+                    version: 'v1.0.0',
+                    version_updated_at: Date.now(),
+                    sdk_version: 'v1.0.0',
+                    icon: 'icon.png',
+                    rating: 5.0,
+                },
+            };
 
-    static get(url, options = {}) {
-        return this._response(url, null, options);
+            resolve(response);
+        });
     }
 
-    static post(url, data = {}, options = {}) {
-        return this._response(url, data, options);
+    /**
+     * Sync the DB: Last-Write-Wins approach
+     * 
+     * @param {integer} lastSyncAt timestamp
+     * @param {array} docsToUpload
+     * 
+     * @return {Promise}
+     */
+    static syncLww(lastSyncAt, docsToUpload) {
+        return new Promise((resolve, reject) => {
+            const response = {
+                data: {
+                    downloads: [],
+                    invalid: [],
+                },
+            };
+
+            resolve(response);
+        });
     }
 
-    static _response(url, data = {}, options = {}) {
-        // See if there's a custom response
-        const route = Object.keys(this.routes).find(i => url.endsWith(i));
+    /**
+     * Validate user's local docs on the server
+     * 
+     * @param {array} docIds
+     * 
+     * @return {Promise}
+     */
+    static validateDocs(docIds) {
+        return new Promise((resolve, reject) => {
+            const response = {
+                data: {
+                    invalid: [],
+                },
+            };
 
-        if (route && this.routes[route]) {
-            const callback = this.routes[route];
-
-            return new Promise((resolve, reject) => {
-                resolve(callback(data, options));
-            });
-        }
-
-        // Default - empty response
-        return this._emptyResponse();
+            resolve(response);
+        });
     }
 
     static _emptyResponse() {
@@ -34,19 +68,6 @@ class ApiMock
                 data: {}
             });
         });
-    }
-
-    static _currentAppInfoResponse() {
-        return {
-            data: {
-                name: 'Koti Cloud App',
-                version: 'v1.0.0',
-                version_updated_at: Date.now(),
-                sdk_version: 'v1.0.0',
-                icon: 'icon.png',
-                rating: 5.0,
-            },
-        };
     }
 }
 

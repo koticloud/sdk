@@ -565,11 +565,7 @@ class DB
         const docIds = allDocs.docs.map(item => item._id);
 
         // Upload the data
-        const response = await Api.post('/api/apps/db/validate-docs', {
-            docs: docIds,
-        }, {
-            timeout: 1000 * 30, // Timeout 30 seconds
-        });
+        const response = await Api.validateDocs(docIds);
 
         // Server returns a list of invalid docs that we should delete
         await this._syncWipeInvalidDocs(response.data.invalid);
@@ -621,12 +617,7 @@ class DB
         docsToUpload = docsToUpload.docs;
 
         // Upload the data
-        const response = await Api.post('/api/apps/db/sync/lww', {
-            last_sync_at: lastSyncAt,
-            uploads: docsToUpload,
-        }, {
-            timeout: 1000 * 30, // Timeout 30 seconds
-        });
+        const response = await Api.syncLww(lastSyncAt, docsToUpload);
 
         // Update local docs on success
         for (let doc of docsToUpload) {
