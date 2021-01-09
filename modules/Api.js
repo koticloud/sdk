@@ -70,7 +70,7 @@ class Api {
      * Determine whether the API class should be mocked
      */
     static _shouldMock() {
-        return location.hostname === 'localhost';
+        return ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1;
     }
 }
 
