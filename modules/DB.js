@@ -2,36 +2,105 @@ import { v4 as uuidv4 } from 'uuid';
 import sha256 from 'js-sha256';
 // import diff_match_patch from 'diff-match-patch';
 
-import IndexedDB from './db-drivers/IndexedDB';
+import Dexie from './db-drivers/Dexie';
+// import IndexedDB from './db-drivers/IndexedDB';
 import HasEvents from '../traits/HasEvents';
 import Api from './Api';
 
 class DB
 {
-    constructor(name, driver = 'indexedDb', collection = null) {
+    constructor(name, migrations = {}, driver = 'indexedDb') {
         // The database
-        this._dbName = `koti_cloud_${name}`;
+        this._dbName = name;
         this._driverName = driver;
         this._driver = null;
         this._initialized = false;
         this._syncing = false;
         this._validating = false;
+        
+        this._idField = '_id';
+        this._metaFields = [
+            '_collection',
+            '_created_at',
+            '_updated_at',
+            '_deleted_at',
+            '_purged',
+            '_synced',
+        ];
 
-        // Query builder
-        this._query = {
-            collection: collection,
-        };
-        this._resetQuery();
+        this._migrations = this._prepareMigrations(migrations);
 
-        this._revActions = {
-            create: 'create',
-            edit: 'edit',
-            trash: 'trash',
-            restore: 'restore',
-            delete: 'delete',
-        };
+        // // Query builder
+        // this._query = {};
+        // this._resetQuery();
 
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // this._revActions = {
+        //     create: 'create',
+        //     edit: 'edit',
+        //     trash: 'trash',
+        //     restore: 'restore',
+        //     delete: 'delete',
+        // };
         // this._dmp = new diff_match_patch();
+    }
+
+    /**
+     * Prepare the migrations - add the ID and required meta fields.
+     * 
+     * @param {object} migrations 
+     * @return {object} migrations 
+     */
+    _prepareMigrations(migrations) {
+        // Apply the DB migrations, one version at a time
+        for (let version in migrations) {
+            // Format schema in the Dexie format
+            const schema = migrations[version].schema;
+
+            for (let tableName in schema) {
+                // The first field is the primary key. Mark it as a unique index
+                // with '&' at the beginning of the name. Apply Koti Cloud meta
+                // fields at the end.
+                schema[tableName] = [`&${this._idField}`]
+                    .concat(schema[tableName])
+                    .concat(this._metaFields);
+            }
+        }
+
+        return migrations;
+    }
+
+    /**
+     * Initialize everything required to work with the DB.
+     */
+    async init() {
+        await this._initDriver();
+
+        // Attach global hooks to the driver
+        this._driver.hook('creating', (collection, primKey, doc) => {
+            // Set all the Koti Cloud meta fields when creating a doc
+            doc = Object.assign(doc, {
+                _collection: collection,
+                _id: this._generateUniqueId(),
+                _created_at: this._now(),
+                _updated_at: this._now(),
+                _deleted_at: null,
+                _purged: 0,
+                _synced: false,
+            });
+        });
+
+        this._driver.hook('updating', (collection, primKey, doc) => {
+            // Set the update-related Koti Cloud meta fields when updating a doc
+            doc = Object.assign(doc, {
+                _updated_at: this._now(),
+                _synced: false,
+            });
+        });
+
+        // TODO: Add a withoutHooks() method to this.colleciton() to optionally ignore these hooks (e.g. while syncing to insert docs as is)
+
+        return true;
     }
 
     /**
@@ -45,27 +114,48 @@ class DB
                 return true;
             }
 
+            // Initialize a specific driver
             switch (this._driver) {
                 default:
-                    this._driver = await new IndexedDB(this._dbName).init();
+                    // NOTE: Abandoned the custom IndexedDB implementation for
+                    // Dexie.js
+                    // this._driver = await new IndexedDB(this._dbName).init();
+
+                    this._driver = await new Dexie(this._dbName)
+                        .init(this._migrations);
+
                     this._initialized = true;
                     this._initializing = false;
-
-                    resolve();
             }
+
+            resolve();
         });
     }
 
     /**
-     * Initialize a query on a DB collection.
+     * Get a list of DB collection (table) names.
      * 
-     * @param {string} name 
+     * @return {array}
+     */
+    async collections() {
+        await this._initDriver();
+
+        return this._driver.collections();
+    }
+
+    /**
+     * Initialize a query on a DB collection (return the driver instance
+     * pointing to a collection)
+     * 
+     * @param {string} name
+     * @return {object} driver
      */
     collection(name) {
-        const dbName = this._dbName.replace('koti_cloud_', '');
+        // const dbName = this._dbName.replace('koti_cloud_', '');
         
-        // Return a new DB object so that all queries are totally isolated
-        return new DB(dbName, this._driverName , name);
+        // // Return a new DB object so that all queries are totally isolated
+        // return new DB(dbName, this._migrations, this._driverName , name);
+        return this._driver.collection(name);
     }
 
     /**
@@ -79,369 +169,126 @@ class DB
         return sha256(`${uuidv4()}-${uuidv4()}-${uuidv4()}-${Date.now()}`);
     }
 
-    /**
-     * Add a 'where' constraint on the query.
-     * 
-     * @param {string} field 
-     * @param {string} operator 
-     * @param {mixed} value 
-     */
-    where(field, operator, value) {
-        if (value !== undefined) {
-            this._query.wheres.push({ field, operator, value });
-        } else {
-            this._query.wheres.push({ field, operator: '=', value: operator });
-        }
+    // /**
+    //  * Add a 'where' constraint on the query.
+    //  * 
+    //  * @param {string} field 
+    //  * @param {string} operator 
+    //  * @param {mixed} value 
+    //  */
+    // where(field, operator, value) {
+    //     if (value !== undefined) {
+    //         this._query.wheres.push({ field, operator, value });
+    //     } else {
+    //         this._query.wheres.push({ field, operator: '=', value: operator });
+    //     }
 
-        return this;
-    }
+    //     return this;
+    // }
 
-    /**
-     * Add an order/sort rule to the query.
-     * 
-     * @param {string} field 
-     * @param {string} dir 
-     */
-    orderBy(field, dir = 'asc') {
-        const exists = this._query.orders.find(order => {
-            return order[field];
-        });
+    // /**
+    //  * Add a 'limit' constraint on the query.
+    //  * 
+    //  * @param {integer} limit 
+    //  */
+    // limit(limit) {
+    //     this._query.limit = limit;
 
-        if (exists) {
-            exists[field] = dir;
-        } else {
-            this._query.orders.push({ [field]: dir });
-        }
+    //     return this;
+    // }
 
-        return this;
-    }
+    // /**
+    //  * Add an order/sort rule to the query.
+    //  * 
+    //  * @param {string} field 
+    //  * @param {string} dir 
+    //  */
+    // orderBy(field, dir = 'asc') {
+    //     const exists = this._query.orders.find(order => {
+    //         return order[field];
+    //     });
 
-    /**
-     * Fetch only trashed docs.
-     */
-    onlyTrashed() {
-        const condition = this._query.wheres.find(item => {
-            return item.field == '_deleted_at';
-        });
+    //     if (exists) {
+    //         exists[field] = dir;
+    //     } else {
+    //         this._query.orders.push({ [field]: dir });
+    //     }
 
-        if (condition) {
-            condition.operator = '!=';
-            condition.value = null;
+    //     return this;
+    // }
 
-            return this;
-        }
+    // /**
+    //  * Fetch only trashed docs.
+    //  */
+    // onlyTrashed() {
+    //     const condition = this._query.wheres.find(item => {
+    //         return item.field == '_deleted_at';
+    //     });
 
-        return this.where('_deleted_at', '!=', null);
-    }
+    //     if (condition) {
+    //         condition.operator = '!=';
+    //         condition.value = null;
 
-    /**
-     * Include trashed docs in the results.
-     */
-    withTrashed() {
-        // Find the _deleted_at WHERE if any and remove it
-        const condition = this._query.wheres.find(item => {
-            return item.field == '_deleted_at';
-        });
+    //         return this;
+    //     }
+
+    //     return this.where('_deleted_at', '!=', null);
+    // }
+
+    // /**
+    //  * Include trashed docs in the results.
+    //  */
+    // withTrashed() {
+    //     // Find the _deleted_at WHERE if any and remove it
+    //     const condition = this._query.wheres.find(item => {
+    //         return item.field == '_deleted_at';
+    //     });
         
-        if (!condition) {
-            return this;
-        }
+    //     if (!condition) {
+    //         return this;
+    //     }
 
-        this._query.wheres.splice(this._query.wheres.indexOf(condition), 1);
+    //     this._query.wheres.splice(this._query.wheres.indexOf(condition), 1);
 
-        return this;
-    }
+    //     return this;
+    // }
 
-    /**
-     * Include deleted/purged docs in the results.
-     */
-    _withPurged() {
-        // Find the _deleted_at WHERE if any and remove it
-        const condition = this._query.wheres.find(item => {
-            return item.field == '_purged';
-        });
+    // /**
+    //  * Include deleted/purged docs in the results.
+    //  */
+    // _withPurged() {
+    //     // Find the _deleted_at WHERE if any and remove it
+    //     const condition = this._query.wheres.find(item => {
+    //         return item.field == '_purged';
+    //     });
         
-        if (!condition) {
-            return this;
-        }
+    //     if (!condition) {
+    //         return this;
+    //     }
 
-        this._query.wheres.splice(this._query.wheres.indexOf(condition), 1);
+    //     this._query.wheres.splice(this._query.wheres.indexOf(condition), 1);
 
-        return this;
-    }
-
-    /**
-     * Reset the query (builder)
-     */
-    _resetQuery() {
-        this._query = {
-            collection: this._query.collection,
-            wheres: [
-                // By default the trashed items are hidden
-                {
-                    field: '_deleted_at',
-                    operator: '=',
-                    value: null,
-                },
-                // By default the deleted (purged) items are hidden
-                {
-                    field: '_purged',
-                    operator: '=',
-                    value: 0,
-                },
-            ],
-            orders: [],
-        };
-    }
+    //     return this;
+    // }
 
     /**
      * Get the current timestamp.
      */
     _now() {
-        return Math.floor((new Date()).getTime() / 1000);
+        return Date.now() / 1000;
     }
 
-    /**
-     * Create a new document. Throws an exception if the id inside the data
-     * object is not unique.
-     * 
-     * @param {object} data
-     * @param {bool} updateMetadata
-     */
-    async create(data, updateMetadata = true) {
-        // Make sure the driver is initialized
-        await this._initDriver();
+    // /**
+    //  * Delete a documents by id.
+    //  * 
+    //  * @param {string} id
+    //  */
+    // async _deleteById(id) {
+    //     // Call the driver method
+    //     await this._driver.deleteById(id);
 
-        // Append meta data
-        data = Object.assign(data, {
-            _collection: this._query.collection,
-            _id: this._generateUniqueId(),
-            _created_at: this._now(),
-            _updated_at: this._now(),
-            _deleted_at: null,
-            _purged: 0,
-            _synced: false,
-            _revs: [],
-        });
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Add a revision
-        // data._revs.push(this._makeRevision(this._revActions.create, {}, data));
-
-        // Call the driver method
-        return await this._driver.create(data);
-    }
-
-    /**
-     * Store a new document as is. Throws an exception if the id inside the data
-     * object is not unique.
-     * 
-     * @param {object} data 
-     */
-    async store(data) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Call the driver method
-        return await this._driver.create(data);
-    }
-
-    /**
-     * Update an existing document.
-     * 
-     * @param {object} doc 
-     * @param {bool} updateMetadata
-     */
-    async update(doc, updateMetadata = true) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Original data before changes were made
-        // const before = await this.withTrashed().getById(doc._id);
-
-        // Update the document's metadata
-        if (updateMetadata) {
-            doc._updated_at = this._now();
-            doc._synced = false;
-        }
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Add a revision
-        // if (makeRevision) {
-        //     doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
-        // }
-
-        // Call the driver method
-        return await this._driver.update(doc);
-    }
-
-    /**
-     * Update an existing document or create a new one if it doesn't exist.
-     * 
-     * @param {PouchDB doc}|obeject data 
-     */
-    async updateOrCreate(doc) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        return (doc._id && doc._created_at)
-            ? await this.update(doc)
-            : await this.create(doc);
-    }
-
-    /**
-     * Trash (soft-delete) a document.
-     * 
-     * @param {object} doc 
-     */
-    async trash(doc) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Original data before changes were made
-        // const before = await this.getById(doc._id);
-
-        // Update the document object
-        doc._deleted_at = this._now();
-        doc._updated_at = this._now();
-        doc._synced = false;
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Add a revision
-        // doc._revs.push(this._makeRevision(this._revActions.trash, before, doc));
-
-        // Call the driver method
-        return await this._driver.update(doc);
-    }
-
-    /**
-     * Purge (hard-delete) a document.
-     * 
-     * @param {object} doc 
-     */
-    async delete(doc) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Original data before changes were made
-        // const before = await this.withTrashed().getById(doc._id);
-
-        // Update the document object
-        doc._deleted_at = this._now();
-        doc._updated_at = this._now();
-        doc._purged = 1;
-        doc._synced = false;
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Add a revision
-        // doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
-
-        // Call the driver method
-        return await this._driver.update(doc);
-    }
-
-    /**
-     * Restore a trashed (soft-deleted) document.
-     * 
-     * @param {object} doc 
-     */
-    async restore(doc) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Original data before changes were made
-        const before = await this.withTrashed().getById(doc._id);
-
-        // Update the document object
-        doc._deleted_at = null;
-        doc._updated_at = this._now();
-        doc._synced = false;
-
-        // TODO: Temporarily disabled as not using diff/patch anymore
-        // // Add a revision
-        // doc._revs.push(this._makeRevision(this._revActions.restore, before, doc));
-
-        // Call the driver method
-        return await this._driver.update(doc);
-    }
-
-    /**
-     * Return query results.
-     */
-    async get() {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Call the driver method
-        const docs = await this._driver.get(this._query);
-
-        // Reset the query
-        this._resetQuery();
-
-        return {
-            docs: docs,
-            total: docs.length,
-        };
-    }
-
-    /**
-     * Get ALL existing docs, including the trashed and purged/deleted ones.
-     */
-    async getAll() {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Call the driver method
-        const docs = await this._driver.getAll();
-
-        // Reset the query
-        this._resetQuery();
-
-        return {
-            docs: docs,
-            total: docs.length,
-        };
-    }
-
-    /**
-     * Get a document by id.
-     * 
-     * @param {string} id 
-     */
-    async getById(id) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Call the driver method
-        const doc = await this._driver.getById(id, this._query);
-
-        if (!doc) {
-            return null;
-        }
-
-        // Reset the query
-        this._resetQuery();
-        
-        return doc;
-    }
-
-    /**
-     * Delete a documents by id.
-     * 
-     * @param {string} id
-     */
-    async _deleteById(id) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Call the driver method
-        await this._driver.deleteById(id);
-
-        return true;
-    }
+    //     return true;
+    // }
 
     // /**
     //  * Make a revision for a document
@@ -539,124 +386,139 @@ class DB
      * which will return a list of invalid docs which we can then wipe out.
      */
     async validate() {
-        // Make sure the driver is initialized
-        await this._initDriver();
+        // TODO: Implement
+        // // TODO: move to driver, call this._driver.validate() ?? Or nah, no need actually
 
-        // Don't validate when offline
-        if (!this.isOnline()) {
-            return;
-        }
+        // // Don't validate when offline
+        // if (!this._isOnline()) {
+        //     return;
+        // }
 
-        if (this._validating) {
-            return;
-        }
+        // if (this._validating) {
+        //     return;
+        // }
 
-        this._validating = true;
+        // this._validating = true;
 
-        // Get IDs of all the docs
-        const allDocs = await this.withTrashed()
-            ._withPurged()
-            .get();
+        
+        // // Get IDs of all the docs from all the tables
+        // const allDocs = [];
 
-        if (!allDocs.docs.length) {
-            return true;
-        }
+        // for (let name of await this.collections()) {
+        //     const docs = await this.collection(name).toArray();
 
-        const docIds = allDocs.docs.map(item => item._id);
+        //     // TODO: withTrashed and other methods
+        //     // const docs = await this.collection(name).toArray();
+        //     // const docs = await this._driver._db[name].toArray();
+        //     // const docs = await this.withTrashed()
+        //     //     ._withPurged()
+        //     //     .get();
+        //     console.log(docs);
+        // }
+        // // TODO: Refactor to work with Dexie driver
+        // // console.log(await this.collection('history'));
 
-        // Upload the data
-        const response = await Api.validateDocs(docIds);
+        // // for (let table of this._driver.tables) {
+        // //     console.log(table);
+        // // }
+        // // const allDocs = await this.withTrashed()
+        // //     ._withPurged()
+        // //     .get();
 
-        // Server returns a list of invalid docs that we should delete
-        await this._syncWipeInvalidDocs(response.data.invalid);
+        // // if (!allDocs.docs.length) {
+        // //     return true;
+        // // }
 
-        this._validating = false;
+        // // const docIds = allDocs.docs.map(item => item._id);
 
-        this.emit('synced');
+        // // // Upload the data
+        // // const response = await Api.validateDocs(docIds);
 
-        return true;
+        // // // Server returns a list of invalid docs that we should delete
+        // // await this._syncWipeInvalidDocs(response.data.invalid);
+
+        // // this._validating = false;
+
+        // // this.emit('synced');
+
+        // // return true;
     }
 
     /**
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
-        // Make sure the driver is initialized
-        await this._initDriver();
+        // TODO: Refactor to work with Dexie
+        // // Don't try to sync when offline
+        // if (!this._isOnline()) {
+        //     return;
+        // }
 
-        // Don't try to sync when offline
-        if (!this.isOnline()) {
-            return;
-        }
+        // if (this._syncing) {
+        //     return;
+        // }
 
-        if (this._syncing) {
-            return;
-        }
+        // this._syncing = true;
 
-        this._syncing = true;
+        // // Get the latest '_updated_at' timestamp among all the synced docs
+        // const allSyncedDocs = await this.withTrashed()
+        //     ._withPurged()
+        //     .where('_synced', true)
+        //     .orderBy('_updated_at', 'desc')
+        //     .get();
 
-        // Get the latest '_updated_at' timestamp among all the synced docs
-        const allSyncedDocs = await this.withTrashed()
-            ._withPurged()
-            .where('_synced', true)
-            .orderBy('_updated_at', 'desc')
-            .get();
+        // let lastSyncAt = 0;
 
-        let lastSyncAt = 0;
+        // if (allSyncedDocs.docs.length) {
+        //     lastSyncAt = allSyncedDocs.docs[0]._updated_at;
+        // }
 
-        if (allSyncedDocs.docs.length) {
-            lastSyncAt = allSyncedDocs.docs[0]._updated_at;
-        }
+        // // Prepare the list of docs to upload
+        // let docsToUpload = await this.withTrashed()
+        //     ._withPurged()
+        //     .where('_synced', false)
+        //     .get();
 
-        // Prepare the list of docs to upload
-        let docsToUpload = await this.withTrashed()
-            ._withPurged()
-            .where('_synced', false)
-            .get();
+        // docsToUpload = docsToUpload.docs;
 
-        docsToUpload = docsToUpload.docs;
+        // // Upload the data
+        // const response = await Api.syncLww(lastSyncAt, docsToUpload);
 
-        // Upload the data
-        const response = await Api.syncLww(lastSyncAt, docsToUpload);
+        // // Update local docs on success
+        // for (let doc of docsToUpload) {
+        //     // Delete the purged docs forever
+        //     if (doc._purged) {
+        //         await this._deleteById(doc._id);
 
-        // Update local docs on success
-        for (let doc of docsToUpload) {
-            // Delete the purged docs forever
-            if (doc._purged) {
-                await this._deleteById(doc._id);
+        //         continue;
+        //     }
 
-                continue;
-            }
+        //     // Mark the uploaded docs as synced
+        //     doc._synced = true;
 
-            // Mark the uploaded docs as synced
-            doc._synced = true;
+        //     this.update(doc, false);
+        // }
 
-            this.update(doc, false);
-        }
+        // // Server returns a list of invalid docs that we should delete
+        // await this._syncWipeInvalidDocs(response.data.invalid);
 
-        // Server returns a list of invalid docs that we should delete
-        await this._syncWipeInvalidDocs(response.data.invalid);
+        // // Server returns data that we're missing locally. Save that data.
+        // await this._syncDownloadedChanges(response.data.downloads);
 
-        // Server returns data that we're missing locally. Save that data.
-        await this._syncDownloadedChanges(response.data.downloads);
+        // // // Delete the docs that were purged/deleted from the server
+        // // await this.syncDeletePurged(diffs.deleted);
 
-        // // Delete the docs that were purged/deleted from the server
-        // await this.syncDeletePurged(diffs.deleted);
+        // this._syncing = false;
 
-        this._syncing = false;
+        // this.emit('synced');
 
-        this.emit('synced');
-
-        return true;
+        // return true;
     }
 
     /**
      * Sync - apply changes from the server.
      */
     async _syncDownloadedChanges(data) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
         if (!data || !data.length) {
             return;
         }
@@ -697,9 +559,6 @@ class DB
      * Sync - wipe out the invalid local docs.
      */
     async _syncWipeInvalidDocs(docIds) {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
         if (!docIds || !docIds.length) {
             return;
         }
@@ -898,7 +757,7 @@ class DB
      * 
      * @return boolean
      */
-    isOnline() {
+    _isOnline() {
         return window.navigator.onLine;
     }
 }

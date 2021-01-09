@@ -32,25 +32,35 @@ class App {
      * @return void
      */
     async init(options) {
-        this._readCachedAppInfo();
+        return new Promise(async (resolve, reject) => {
+            this._readCachedAppInfo();
 
-        this.setCacheables(options.cacheables);
+            this.setCacheables(options.cacheables);
 
-        this.ui = new UI(this);
+            this.ui = new UI(this);
 
-        this._registerServiceWorker(options.serviceWorker);
+            this._registerServiceWorker(options.serviceWorker);
 
-        if (options.db) {
-            this.db = new DB(options.db);
+            if (options.db) {
+                this.db = new DB(
+                    options.db.name,
+                    options.db.migrations,
+                    options.db.driver ? options.db.driver : 'indexedDb'
+                );
 
-            this._syncDbOnAppStart();
-        }
+                await this.db.init();
 
-        this._initialized = true;
+                this._syncDbOnAppStart();
+            }
 
-        // Make the current instance accessible statically
-        App._instance = this;
-        App.setTitle();
+            this._initialized = true;
+
+            // Make the current instance accessible statically
+            App._instance = this;
+            App.setTitle();
+
+            resolve();
+        });
     }
 
     /**
