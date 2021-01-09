@@ -2,15 +2,16 @@ import { v4 as uuidv4 } from 'uuid';
 import sha256 from 'js-sha256';
 // import diff_match_patch from 'diff-match-patch';
 
-import IndexedDB from './db-drivers/IndexedDB';
+import KotiCloudDb from './db-drivers/KotiCloudDb/DB';
 import HasEvents from '../traits/HasEvents';
 import Api from './Api';
 
 class DB
 {
-    constructor(name, driver = 'indexedDb', collection = null) {
+    constructor(name, driver = 'kotiCloudDb', collection = null) {
         // The database
         this._dbName = name;
+        this._collection = collection;
         this._driverName = driver;
         this._driver = null;
         this._initialized = false;
@@ -18,9 +19,7 @@ class DB
         this._validating = false;
 
         // Query builder
-        this._query = {
-            collection: collection,
-        };
+        this._query = {};
         this._resetQuery();
 
         this._revActions = {
@@ -47,7 +46,7 @@ class DB
 
             switch (this._driver) {
                 default:
-                    this._driver = await new IndexedDB(this._dbName).init();
+                    this._driver = await new KotiCloudDb(this._dbName).init();
                     this._initialized = true;
                     this._initializing = false;
 
@@ -173,7 +172,6 @@ class DB
      */
     _resetQuery() {
         this._query = {
-            collection: this._query.collection,
             wheres: [
                 // By default the trashed items are hidden
                 {
@@ -227,7 +225,7 @@ class DB
         // data._revs.push(this._makeRevision(this._revActions.create, {}, data));
 
         // Call the driver method
-        return await this._driver.create(data);
+        return await this._driver.collection(this._collection).create(data);
     }
 
     /**
@@ -241,7 +239,7 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        return await this._driver.create(data);
+        return await this._driver.collection(this._collection).create(data);
     }
 
     /**
@@ -271,7 +269,7 @@ class DB
         // }
 
         // Call the driver method
-        return await this._driver.update(doc);
+        return await this._driver.collection(this._collection).update(doc);
     }
 
     /**
@@ -311,7 +309,7 @@ class DB
         // doc._revs.push(this._makeRevision(this._revActions.trash, before, doc));
 
         // Call the driver method
-        return await this._driver.update(doc);
+        return await this._driver.collection(this._collection).update(doc);
     }
 
     /**
@@ -338,7 +336,7 @@ class DB
         // doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
 
         // Call the driver method
-        return await this._driver.update(doc);
+        return await this._driver.collection(this._collection).update(doc);
     }
 
     /**
@@ -350,8 +348,9 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // Original data before changes were made
-        const before = await this.withTrashed().getById(doc._id);
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Original data before changes were made
+        // const before = await this.withTrashed().getById(doc._id);
 
         // Update the document object
         doc._deleted_at = null;
@@ -363,7 +362,7 @@ class DB
         // doc._revs.push(this._makeRevision(this._revActions.restore, before, doc));
 
         // Call the driver method
-        return await this._driver.update(doc);
+        return await this._driver.collection(this._collection).update(doc);
     }
 
     /**
@@ -374,26 +373,9 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        const docs = await this._driver.get(this._query);
-
-        // Reset the query
-        this._resetQuery();
-
-        return {
-            docs: docs,
-            total: docs.length,
-        };
-    }
-
-    /**
-     * Get ALL existing docs, including the trashed and purged/deleted ones.
-     */
-    async getAll() {
-        // Make sure the driver is initialized
-        await this._initDriver();
-
-        // Call the driver method
-        const docs = await this._driver.getAll();
+        const docs = await this._driver
+            .collection(this._collection)
+            .get(this._query);
 
         // Reset the query
         this._resetQuery();
@@ -414,7 +396,9 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        const doc = await this._driver.getById(id, this._query);
+        const doc = await this._driver
+            .collection(this._collection)
+            .getById(id, this._query);
 
         if (!doc) {
             return null;
@@ -436,7 +420,7 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        await this._driver.deleteById(id);
+        await this._driver.collection(this._collection).deleteById(id);
 
         return true;
     }
@@ -537,115 +521,117 @@ class DB
      * which will return a list of invalid docs which we can then wipe out.
      */
     async validate() {
-        // Make sure the driver is initialized
-        await this._initDriver();
+        // TODO: Refactor (operate on multiple collection)
+        // // Make sure the driver is initialized
+        // await this._initDriver();
 
-        // Don't validate when offline
-        if (!this.isOnline()) {
-            return;
-        }
+        // // Don't validate when offline
+        // if (!this.isOnline()) {
+        //     return;
+        // }
 
-        if (this._validating) {
-            return;
-        }
+        // if (this._validating) {
+        //     return;
+        // }
 
-        this._validating = true;
+        // this._validating = true;
 
-        // Get IDs of all the docs
-        const allDocs = await this.withTrashed()
-            ._withPurged()
-            .get();
+        // // Get IDs of all the docs
+        // const allDocs = await this.withTrashed()
+        //     ._withPurged()
+        //     .get();
 
-        if (!allDocs.docs.length) {
-            return true;
-        }
+        // if (!allDocs.docs.length) {
+        //     return true;
+        // }
 
-        const docIds = allDocs.docs.map(item => item._id);
+        // const docIds = allDocs.docs.map(item => item._id);
 
-        // Upload the data
-        const response = await Api.validateDocs(docIds);
+        // // Upload the data
+        // const response = await Api.validateDocs(docIds);
 
-        // Server returns a list of invalid docs that we should delete
-        await this._syncWipeInvalidDocs(response.data.invalid);
+        // // Server returns a list of invalid docs that we should delete
+        // await this._syncWipeInvalidDocs(response.data.invalid);
 
-        this._validating = false;
+        // this._validating = false;
 
-        this.emit('synced');
+        // this.emit('synced');
 
-        return true;
+        // return true;
     }
 
     /**
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
-        // Make sure the driver is initialized
-        await this._initDriver();
+        // TODO: Refactor (operate on multiple collection)
+        // // Make sure the driver is initialized
+        // await this._initDriver();
 
-        // Don't try to sync when offline
-        if (!this.isOnline()) {
-            return;
-        }
+        // // Don't try to sync when offline
+        // if (!this.isOnline()) {
+        //     return;
+        // }
 
-        if (this._syncing) {
-            return;
-        }
+        // if (this._syncing) {
+        //     return;
+        // }
 
-        this._syncing = true;
+        // this._syncing = true;
 
-        // Get the latest '_updated_at' timestamp among all the synced docs
-        const allSyncedDocs = await this.withTrashed()
-            ._withPurged()
-            .where('_synced', true)
-            .orderBy('_updated_at', 'desc')
-            .get();
+        // // Get the latest '_updated_at' timestamp among all the synced docs
+        // const allSyncedDocs = await this.withTrashed()
+        //     ._withPurged()
+        //     .where('_synced', true)
+        //     .orderBy('_updated_at', 'desc')
+        //     .get();
 
-        let lastSyncAt = 0;
+        // let lastSyncAt = 0;
 
-        if (allSyncedDocs.docs.length) {
-            lastSyncAt = allSyncedDocs.docs[0]._updated_at;
-        }
+        // if (allSyncedDocs.docs.length) {
+        //     lastSyncAt = allSyncedDocs.docs[0]._updated_at;
+        // }
 
-        // Prepare the list of docs to upload
-        let docsToUpload = await this.withTrashed()
-            ._withPurged()
-            .where('_synced', false)
-            .get();
+        // // Prepare the list of docs to upload
+        // let docsToUpload = await this.withTrashed()
+        //     ._withPurged()
+        //     .where('_synced', false)
+        //     .get();
 
-        docsToUpload = docsToUpload.docs;
+        // docsToUpload = docsToUpload.docs;
 
-        // Upload the data
-        const response = await Api.syncLww(lastSyncAt, docsToUpload);
+        // // Upload the data
+        // const response = await Api.syncLww(lastSyncAt, docsToUpload);
 
-        // Update local docs on success
-        for (let doc of docsToUpload) {
-            // Delete the purged docs forever
-            if (doc._purged) {
-                await this._deleteById(doc._id);
+        // // Update local docs on success
+        // for (let doc of docsToUpload) {
+        //     // Delete the purged docs forever
+        //     if (doc._purged) {
+        //         await this._deleteById(doc._id);
 
-                continue;
-            }
+        //         continue;
+        //     }
 
-            // Mark the uploaded docs as synced
-            doc._synced = true;
+        //     // Mark the uploaded docs as synced
+        //     doc._synced = true;
 
-            this.update(doc, false);
-        }
+        //     this.update(doc, false);
+        // }
 
-        // Server returns a list of invalid docs that we should delete
-        await this._syncWipeInvalidDocs(response.data.invalid);
+        // // Server returns a list of invalid docs that we should delete
+        // await this._syncWipeInvalidDocs(response.data.invalid);
 
-        // Server returns data that we're missing locally. Save that data.
-        await this._syncDownloadedChanges(response.data.downloads);
+        // // Server returns data that we're missing locally. Save that data.
+        // await this._syncDownloadedChanges(response.data.downloads);
 
-        // // Delete the docs that were purged/deleted from the server
-        // await this.syncDeletePurged(diffs.deleted);
+        // // // Delete the docs that were purged/deleted from the server
+        // // await this.syncDeletePurged(diffs.deleted);
 
-        this._syncing = false;
+        // this._syncing = false;
 
-        this.emit('synced');
+        // this.emit('synced');
 
-        return true;
+        // return true;
     }
 
     /**
@@ -884,7 +870,8 @@ class DB
      * Wipe out the whole DB
      */
     async wipe() {
-        await this._driver.wipeDb();
+        // TODO: Wipe all the collections in a loop
+        await this._driver.collection(this._collection).wipe();
 
         this.emit('synced');
 

@@ -1,11 +1,10 @@
-import DbDriver from "./DbDriver";
+import DbDriver from "../DbDriver";
+import Collection from "./Collection";
 
 class IndexedDB extends DbDriver
 {
     constructor(dbName) {
         super(dbName);
-
-        this._storeName = 'main-store';
     }
 
     /**
@@ -15,17 +14,17 @@ class IndexedDB extends DbDriver
         return new Promise((resolve, reject) => {
             const openRequest = indexedDB.open(this._dbName);
 
-            openRequest.onupgradeneeded = (e) => {
-                // Create a single main store for all the data to not deal with
-                // schema management/upgrades
-                let db = openRequest.result;
+            // openRequest.onupgradeneeded = (e) => {
+            //     // Create a single main store for all the data to not deal with
+            //     // schema management/upgrades
+            //     let db = openRequest.result;
 
-                if (!db.objectStoreNames.contains(this._storeName)) {
-                    db.createObjectStore(this._storeName, {
-                        keyPath: '_id'
-                    });
-                }
-            };
+            //     if (!db.objectStoreNames.contains(this._collectionName)) {
+            //         db.createObjectStore(this._collectionName, {
+            //             keyPath: '_id'
+            //         });
+            //     }
+            // };
 
             openRequest.onerror = function () {
                 reject(openRequest.error);
@@ -40,15 +39,29 @@ class IndexedDB extends DbDriver
     }
 
     /**
+     * Begin building a query for a collection.
+     * 
+     * @param {string} name
+     * @return {mixed}
+     */
+    collection(name) {
+        if (!name) {
+            return null;
+        }
+
+        return new Collection(this._db, name);
+    }
+
+    /**
      * Perform an IndexedDB request within a Promise.
      * 
-     * @param {object} object 
+     * @param {object} store 
      * @param {string} method 
      * @param {mixed} argument 
      */
-    async _asyncRequest(object, method, argument) {
+    async _asyncRequest(store, method, argument) {
         return new Promise((resolve, reject) => {
-            const request = object[method](argument);
+            const request = store[method](argument);
 
             request.onsuccess = function () {
                 resolve(request.result);
@@ -61,17 +74,6 @@ class IndexedDB extends DbDriver
     }
 
     /**
-     * Get a store object ready to perform a transation.
-     * 
-     * @param {string} mode 
-     */
-    _getStore(mode = 'readonly') {
-        const transaction = this._db.transaction(this._storeName, mode);
-
-        return transaction.objectStore(this._storeName);
-    }
-
-    /**
      * Create a new document, return it.
      * 
      * @param {object} data
@@ -80,7 +82,7 @@ class IndexedDB extends DbDriver
     async create(data) {
         // Create a new object, get its ID
         const id = await this._asyncRequest(
-            this._getStore('readwrite'),
+            this._getStore(data._collection, 'readwrite'),
             'add',
             data
         );
@@ -98,7 +100,7 @@ class IndexedDB extends DbDriver
     async update(doc) {
         // Update an existing object
         await this._asyncRequest(
-            this._getStore('readwrite'),
+            this._getStore(doc._collection, 'readwrite'),
             'put',
             doc
         );
@@ -117,7 +119,7 @@ class IndexedDB extends DbDriver
         let item = null;
 
         try {
-            item = await this._asyncRequest(this._getStore(), 'get', id);
+            item = await this._asyncRequest(this._getStore(query._collection), 'get', id);
         } catch (error) {
             return null;
         }
@@ -131,78 +133,13 @@ class IndexedDB extends DbDriver
     }
 
     /**
-     * Get query results.
-     * 
-     * @param {object} query
-     * @return {object}
-     */
-    async get(query) {
-        return new Promise((resolve, reject) => {
-            const store = this._getStore();
-            const request = store.openCursor()
-
-            let results = [];
-
-            request.onsuccess = (e) => {
-                var cursor = e.target.result;
-
-                if (cursor) {
-                    // Filter out the results from foreign collections
-                    if (query.collection && cursor.value._collection != query.collection) {
-                        cursor.continue();
-
-                        return;
-                    }
-
-                    // Filter our the results that don't pass all the WHERE
-                    // conditions
-                    if (!this._queryWhere(cursor.value, query.wheres)) {
-                        cursor.continue();
-
-                        return;
-                    }
-
-                    results.push(cursor.value);
-
-                    cursor.continue();
-
-                    return;
-                } else {    // No more items
-                    // Sort the results to collect
-                    if (query.orders.length) {
-                        results = results.sort(this._sortFunction(query.orders));
-                    }
-                }
-
-                resolve(results);
-            }
-
-            request.onerror = function (e) {
-                if (e.type === 'success') {
-                    resolve(results);
-                } else {
-                    reject(e.target.error);
-                }
-            };
-        });
-    }
-
-    /**
      * Delete a record by id.
      * 
+     * @param {string} storeName
      * @param {string} id
      */
-    async deleteById(id) {
-        return await this._asyncRequest(this._getStore('readwrite'), 'delete', id);
-    }
-
-    /**
-     * Get ALL docs, including the trashed and purged/deleted ones.
-     * 
-     * @return {array}
-     */
-    async getAll() {
-        return await this._asyncRequest(this._getStore(), 'getAll');
+    async deleteById(storeName, id) {
+        return await this._asyncRequest(this._getStore(storeName, 'readwrite'), 'delete', id);
     }
 
     /**

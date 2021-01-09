@@ -3,6 +3,7 @@ class DbDriver
     constructor(dbName) {
         this._dbName = dbName;
         this._db = null;
+        this._query = null;
     }
 
     /**
@@ -10,6 +11,16 @@ class DbDriver
      */
     init() {
         throw 'method "init()" is not implemented in the current DB driver.';
+    }
+
+    /**
+     * Begin building a query for a collection.
+     * 
+     * @param {string} name
+     * @return {mixed}
+     */
+    collection(name) {
+        throw 'method "collection()" is not implemented in the current DB driver.';
     }
 
     /**
@@ -59,15 +70,6 @@ class DbDriver
      */
     async deleteById(id) {
         throw 'method "deleteById()" is not implemented in the current DB driver.';
-    }
-
-    /**
-     * Get ALL docs, including the trashed and purged/deleted ones.
-     * 
-     * @return {array}
-     */
-    async getAll() {
-        throw 'method "getAll()" is not implemented in the current DB driver.';
     }
 
     /**
