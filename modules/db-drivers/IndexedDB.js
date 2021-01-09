@@ -8,6 +8,9 @@ class IndexedDB extends DbDriver
         this._storeName = 'main-store';
     }
 
+    /**
+     * Initialize the driver
+     */
     init() {
         return new Promise((resolve, reject) => {
             const openRequest = indexedDB.open(this._dbName);
@@ -69,9 +72,10 @@ class IndexedDB extends DbDriver
     }
 
     /**
-     * Create a new document
+     * Create a new document, return it.
      * 
-     * @param {object} data 
+     * @param {object} data
+     * @return {object} document 
      */
     async create(data) {
         // Create a new object, get its ID
@@ -88,7 +92,8 @@ class IndexedDB extends DbDriver
     /**
      * Update an existing document.
      * 
-     * @param {object} doc 
+     * @param {object} doc
+     * @return {object} document
      */
     async update(doc) {
         // Update an existing object
@@ -106,6 +111,7 @@ class IndexedDB extends DbDriver
      * Get a document by id.
      * 
      * @param {string} id 
+     * @return {object} document
      */
     async getById(id, query = null) {
         let item = null;
@@ -127,17 +133,15 @@ class IndexedDB extends DbDriver
     /**
      * Get query results.
      * 
-     * @param {object} query 
+     * @param {object} query
+     * @return {object}
      */
     async get(query) {
         return new Promise((resolve, reject) => {
             const store = this._getStore();
+            const request = store.openCursor()
 
             let results = [];
-
-            // NOTE: this is left in case I want to implement pagination
-            // const request = store.openCursor(IDBKeyRange.bound(skip, skip + take))
-            const request = store.openCursor()
 
             request.onsuccess = (e) => {
                 var cursor = e.target.result;
@@ -184,23 +188,25 @@ class IndexedDB extends DbDriver
     }
 
     /**
-     * Delete a record by id
+     * Delete a record by id.
      * 
-     * @param {string} ids
+     * @param {string} id
      */
     async deleteById(id) {
         return await this._asyncRequest(this._getStore('readwrite'), 'delete', id);
     }
 
     /**
-     * Get ALL existing docs, including the trashed and purged/deleted ones.
+     * Get ALL docs, including the trashed and purged/deleted ones.
+     * 
+     * @return {array}
      */
     async getAll() {
         return await this._asyncRequest(this._getStore(), 'getAll');
     }
 
     /**
-     * Wipe out the whole DB
+     * Wipe out the entire DB.
      */
     async wipeDb() {
         return await this._asyncRequest(

@@ -10,7 +10,7 @@ class DB
 {
     constructor(name, driver = 'indexedDb', collection = null) {
         // The database
-        this._dbName = `koti_cloud_${name}`;
+        this._dbName = name;
         this._driverName = driver;
         this._driver = null;
         this._initialized = false;
@@ -62,10 +62,8 @@ class DB
      * @param {string} name 
      */
     collection(name) {
-        const dbName = this._dbName.replace('koti_cloud_', '');
-        
         // Return a new DB object so that all queries are totally isolated
-        return new DB(dbName, this._driverName , name);
+        return new DB(this._dbName, this._driverName, name);
     }
 
     /**
@@ -198,7 +196,7 @@ class DB
      * Get the current timestamp.
      */
     _now() {
-        return Math.floor((new Date()).getTime() / 1000);
+        return Date.now() / 1000;
     }
 
     /**
