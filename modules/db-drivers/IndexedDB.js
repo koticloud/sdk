@@ -21,9 +21,16 @@ class IndexedDB extends DbDriver
                 let db = openRequest.result;
 
                 if (!db.objectStoreNames.contains(this._storeName)) {
-                    db.createObjectStore(this._storeName, {
+                    const store = db.createObjectStore(this._storeName, {
                         keyPath: '_id'
                     });
+
+                    // Create indexes for faster data retrieval
+                    store.createIndex(
+                        'collection',
+                        '_collection',
+                        { unique: false }
+                    );
                 }
             };
 
@@ -139,21 +146,21 @@ class IndexedDB extends DbDriver
     async get(query) {
         return new Promise((resolve, reject) => {
             const store = this._getStore();
-            const request = store.openCursor()
+            let request;
+
+            if (query.collection) {
+                // request = store.index('collection').openCursor();
+                request = store.index('collection').openCursor(query.collection);
+            } else {
+                request = store.openCursor();
+            }
 
             let results = [];
 
             request.onsuccess = (e) => {
-                var cursor = e.target.result;
+                let cursor = e.target.result;
 
                 if (cursor) {
-                    // Filter out the results from foreign collections
-                    if (query.collection && cursor.value._collection != query.collection) {
-                        cursor.continue();
-
-                        return;
-                    }
-
                     // Filter our the results that don't pass all the WHERE
                     // conditions
                     if (!this._queryWhere(cursor.value, query.wheres)) {
@@ -165,16 +172,14 @@ class IndexedDB extends DbDriver
                     results.push(cursor.value);
 
                     cursor.continue();
-
-                    return;
                 } else {    // No more items
-                    // Sort the results to collect
+                    // Sort the final results
                     if (query.orders.length) {
                         results = results.sort(this._sortFunction(query.orders));
                     }
-                }
 
-                resolve(results);
+                    resolve(results);
+                }
             }
 
             request.onerror = function (e) {
