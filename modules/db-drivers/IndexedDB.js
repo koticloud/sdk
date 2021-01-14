@@ -155,7 +155,10 @@ class IndexedDB extends DbDriver
                 request = store.openCursor();
             }
 
-            let results = [];
+            let results = {
+                docs: [],
+                total: 0,
+            };
 
             request.onsuccess = (e) => {
                 let cursor = e.target.result;
@@ -169,14 +172,24 @@ class IndexedDB extends DbDriver
                         return;
                     }
 
-                    results.push(cursor.value);
+                    results.docs.push(cursor.value);
 
                     cursor.continue();
                 } else {    // No more items
                     // Sort the final results
                     if (query.orders.length) {
-                        results = results.sort(this._sortFunction(query.orders));
+                        results.docs = results.docs.sort(this._sortFunction(query.orders));
                     }
+
+                    // Count the total amount of docs
+                    results.total = results.docs.length;
+
+                    // Take a subset of the results
+                    const from = query.from ? query.from : 0;
+                    const to = (query.limit ? query.limit : results.length - 1)
+                        + from;
+
+                    results.docs = results.docs.slice(from, to);
 
                     resolve(results);
                 }

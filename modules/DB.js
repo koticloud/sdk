@@ -115,6 +115,28 @@ class DB
     }
 
     /**
+     * Limit the number of results.
+     * 
+     * @param {integer} limit 
+     */
+    limit(limit) {
+        this._query.limit = limit;
+
+        return this;
+    }
+
+    /**
+     * Skip N first results, start from...
+     * 
+     * @param {integer} from 
+     */
+    from(from) {
+        this._query.from = from;
+
+        return this;
+    }
+
+    /**
      * Fetch only trashed docs.
      */
     onlyTrashed() {
@@ -374,15 +396,12 @@ class DB
         await this._initDriver();
 
         // Call the driver method
-        const docs = await this._driver.get(this._query);
+        const results = await this._driver.get(this._query);
 
         // Reset the query
         this._resetQuery();
 
-        return {
-            docs: docs,
-            total: docs.length,
-        };
+        return results;
     }
 
     /**
