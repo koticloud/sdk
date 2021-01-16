@@ -1,5 +1,5 @@
 <script>
-    import Navigator from './navigator/Navigator.js';
+    import Navigator from '../../../Navigator.js';
 
     export let to;
     export let params = {};

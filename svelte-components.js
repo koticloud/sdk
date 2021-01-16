@@ -1,11 +1,9 @@
 // Navigator (router)
-import Page from './modules/ui-components/svelte/Page.svelte';
-import PageLink from './modules/ui-components/svelte/PageLink.svelte';
-import Navigator from './modules/ui-components/svelte/navigator/Navigator.js';
+import Page from './modules/ui-components/svelte/navigator/Page.svelte';
+import PageLink from './modules/ui-components/svelte/navigator/PageLink.svelte';
 
 export {
     // Navigator (router)
     Page,
     PageLink,
-    Navigator,
 };

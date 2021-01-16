@@ -1,13 +1,13 @@
 export default {
     _eventSubscriptions: {},
 
-    emit(event) {
+    emit(event, data) {
         if (!this._eventSubscriptions[event]) {
             return;
         }
 
         for (let callback of this._eventSubscriptions[event]) {
-            callback();
+            callback(data);
         }
     },
 

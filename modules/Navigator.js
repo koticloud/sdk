@@ -1,14 +1,14 @@
-import { get } from 'svelte/store';
+import App from './App.js';
 
-import App from '../../../App.js';
-// Svelte stores
-import { Pages } from './Pages.js';
-import { CurrentPage } from './CurrentPage.js';
-
-class Navigator {
+class Navigator
+{
     static _onAfterNavigation = {};
     static _goingForward = false;
     static _closeAppOnBackNavigation = false;
+    static _eventSubscriptions = {};
+
+    static pages;
+    static currentPage;
 
     static init() {
         if (this._initialized) {
@@ -16,14 +16,18 @@ class Navigator {
         }
 
         window.addEventListener('popstate', async (event) => {
-            // Ignore `history.go(1)`
+            // Ignore the `history.go(1)` from below
             if (Navigator._goingForward) {
                 Navigator._goingForward = false;
 
                 return;
             }
 
-            const beforeLeaving = get(CurrentPage).beforeLeaving;
+            // A global beforeLeaving check
+            // TODO: Prevent going back if a dialog is open. Don't do anything else.
+
+            // The current page's beforeLeaving callback/check
+            const beforeLeaving = Navigator.currentPage.beforeLeaving;
 
             if (beforeLeaving) {
                 if ((beforeLeaving.constructor.name === 'AsyncFunction' && !await beforeLeaving()) || !beforeLeaving()) {
@@ -45,9 +49,10 @@ class Navigator {
     }
 
     static setPages(pages) {
-        Pages.set(this._parsePages(pages));
+        Navigator.pages = this._parsePages(pages);
 
         this.init();
+        Navigator.emit('pages-updated', Navigator.pages);
     }
 
     static _parsePages(pages, parent = null) {
@@ -71,21 +76,22 @@ class Navigator {
     }
 
     static getCurrentPage() {
-        return get(CurrentPage);
+        return Navigator.currentPage;
     }
 
     static async goTo(name, params = {}) {
-        const page = get(Pages)[name];
+        const page = Navigator.pages[name];
 
         if (!page) {
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
         }
 
-        CurrentPage.set(Object.assign({}, page, { params }));
+        Navigator.currentPage = Object.assign({}, page, { params });
+        Navigator.emit('current-page-updated', Navigator.currentPage);
 
         App.setTitle(page.title);
 
-        history.pushState({}, '', `#${name}`);
+        history.pushState({}, '', `#/${name}`);
 
         // If this is not a root level page
         if (page.parent) {
@@ -98,12 +104,12 @@ class Navigator {
     }
 
     static goBack() {
-        this.goTo(get(CurrentPage).parent.name);
+        this.goTo(Navigator.currentPage.parent.name);
     }
 
     static _onBackButton(event) {
         // If the current page has a parent page - go one level up
-        if (get(CurrentPage).parent) {
+        if (Navigator.currentPage.parent) {
             this.goBack();
         } else {
             // If there's no parent = we're at the root level -> close the app
@@ -126,10 +132,10 @@ class Navigator {
      * @param {function} callback 
      */
     static beforeLeaving(callback) {
-        const pages = get(Pages);
+        const pages = Navigator.pages;
 
-        pages[get(CurrentPage).name].beforeLeaving = callback;
-        get(CurrentPage).beforeLeaving = callback;
+        pages[Navigator.currentPage.name].beforeLeaving = callback;
+        Navigator.currentPage.beforeLeaving = callback;
     }
 
     /**
@@ -139,6 +145,27 @@ class Navigator {
      */
     static afterNavigation(callback) {
         Navigator._onAfterNavigation = callback;
+    }
+
+    /**
+     * Events
+     */
+    static emit(event, data) {
+        if (!Navigator._eventSubscriptions[event]) {
+            return;
+        }
+
+        for (let callback of Navigator._eventSubscriptions[event]) {
+            callback(data);
+        }
+    }
+
+    static on(event, callback) {
+        if (Navigator._eventSubscriptions[event] === undefined) {
+            Navigator._eventSubscriptions[event] = [];
+        }
+
+        Navigator._eventSubscriptions[event].push(callback);
     }
 }
 
