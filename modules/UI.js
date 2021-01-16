@@ -1,22 +1,27 @@
 import Panel from './ui-components/js/Panel.js';
 import OsOverlay from './ui-components/js/OsOverlay.js';
+import Overlay from './ui-components/js/Overlay.js';
 
 import HasEvents from '../traits/HasEvents';
+import Dialog from './ui-components/js/Dialog.js';
 
 class UI {
     constructor(app) {
         this._app = app;
 
-        this._openDialogsCount = 0;
-        this.overlayEl = null;
+        this.overlayEl = null;  // TODO: Remove this var when not needed anymore
         this.notificationsContainerEl = null;
 
-        this._components = [
-            new Panel(this),
-            new OsOverlay(this),
-        ];
+        const overlay = new Overlay(this);
 
-        this._initialize();
+        this._components = {
+            panel: new Panel(this),
+            osOverlay: new OsOverlay(this),
+            overlay: overlay,
+            dialog: new Dialog(this, overlay),
+        };
+
+        return this._initialize();
     }
 
     _initialize() {
@@ -26,25 +31,24 @@ class UI {
         // an initialization)
         if (body.classList.contains('kc')) {
             // Get the existing elements
-            this.overlayEl = document.querySelector('.kc--overlay');
             this.notificationsContainerEl = document.querySelector('.kc--notifications-container');
 
             return;
         }
 
-        for (let component of this._components) {
+        for (let name in this._components) {
+            const component = this._components[name];
+
             if (!component.isInitialized()) {
                 component.initialize();
             }
         }
 
-        this.overlayEl = document.createElement('div');
-        this.overlayEl.classList.add('kc--overlay');
+        this.overlayEl = document.querySelector('.kc--overlay');
 
         this.notificationsContainerEl = document.createElement('div');
         this.notificationsContainerEl.classList.add('kc--notifications-container');
 
-        body.appendChild(this.overlayEl);
         body.appendChild(this.notificationsContainerEl);
 
         // Close notifications on click
@@ -62,12 +66,12 @@ class UI {
         return this._app;
     }
 
-    _showOverlay() {
-        this.overlayEl.classList.add('show');
+    showOverlay() {
+        this.emit('show-overlay');
     }
     
-    _hideOverlay() {
-        this.overlayEl.classList.remove('show');
+    hideOverlay() {
+        this.emit('hide-overlay');
     }
 
     /**
@@ -77,82 +81,17 @@ class UI {
      * @param {string} id
      */
     confirm(msg, id = null) {
-        // Dialog container
-        const dialogEl = document.createElement('div');
-        dialogEl.classList.add('kc--dialog');
+        return this._components.dialog.confirm(msg, id);
+    }
 
-        // If an id was specified
-        if (id) {
-            // If dialog with this id already exists - don't create a new one
-            if (document.querySelector(`.kc--dialog[data-id="${id}"]`)) {
-                return new Promise((resolve, reject) => {
-                    reject();
-                });
-            }
-
-            dialogEl.dataset.id = id;
-        }
-
-        // Dialog body container
-        const bodyEl = document.createElement('div');
-        bodyEl.classList.add('kc--dialog--body');
-        bodyEl.innerText = msg;
-
-        // Dialog buttons container
-        const buttonsEl = document.createElement('div');
-        buttonsEl.classList.add('kc--dialog--buttons');
-
-        // Dialog buttons
-        const btnYes = document.createElement('button');
-        btnYes.classList.add('kc--dialog--button');
-        btnYes.innerText = 'Yes';
-
-        const btnNo = document.createElement('button');
-        btnNo.classList.add('kc--dialog--button');
-        btnNo.innerText = 'No';
-
-        // Append elements
-        buttonsEl.appendChild(btnYes);
-        buttonsEl.appendChild(btnNo);
-
-        dialogEl.appendChild(bodyEl);
-        dialogEl.appendChild(buttonsEl);
-
-        this.overlayEl.appendChild(dialogEl);
-
-        // Show the overlay with all the elements
-        this._showOverlay();
-
-        this._openDialogsCount++;
-
-        // Return a promise
-        return new Promise((resolve, reject) => {
-            btnYes.addEventListener('click', (e) => {
-                // Destroy the dialog
-                dialogEl.remove();
-                this._openDialogsCount--;
-
-                // Hide the overlay if there are no more open dialogs left
-                if (!this._openDialogsCount) {
-                    this._hideOverlay();
-                }
-
-                resolve();
-            }, { once: true });
-
-            btnNo.addEventListener('click', (e) => {
-                // Destroy the dialog
-                dialogEl.remove();
-                this._openDialogsCount--;
-
-                // Hide the overlay if there are no more open dialogs left
-                if (!this._openDialogsCount) {
-                    this._hideOverlay();
-                }
-
-                reject();
-            }, { once: false });
-        });
+    /**
+     * Show a custom dialog.
+     * 
+     * @param {string} body
+     * @param {object} options
+     */
+    dialog(body, options) {
+        return this._components.dialog.dialog(body, options);
     }
 
     /**
@@ -295,16 +234,8 @@ class UI {
         el.parentElement.removeChild(el);
     }
 
-    openDialogsCount() {
-        return this._openDialogsCount;
-    }
-
     hasOpenDialogs() {
-        return this._openDialogsCount > 0;
-    }
-
-    overlayVisible() {
-        return this.overlayEl.classList.contains('show');
+        return this._components.dialog.openDialogsCount() > 0;
     }
 }
 
