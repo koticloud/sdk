@@ -36,7 +36,7 @@ class Overlay extends Component
      * @return string
      */
     _getTemplate() {
-        return `<div class="kc--overlay"></div>`;
+        return '';
     }
 
     /**
@@ -45,6 +45,18 @@ class Overlay extends Component
      * @return void
      */
     _registerEvents() {
+        // Close overlay on overlay click
+        this._el.addEventListener('click', (e) => {
+            // Only when click on the overlay element directly
+            if (e.target === this._el) {
+                this._ui.emit('overlay-closed');
+    
+                this.removeChildren();
+    
+                this.hide();
+            }
+        });
+
         // Toggle overlay on UI toggle-os-overlay event
         this._ui.on('show-overlay', () => {
             this.show();
@@ -71,6 +83,12 @@ class Overlay extends Component
 
     hasChild(selector) {
         return document.querySelectorAll(selector).length > 0;
+    }
+
+    removeChildren() {
+        for (let child of this._el.children) {
+            this._el.removeChild(child);
+        }
     }
 }
 

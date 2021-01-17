@@ -43,56 +43,57 @@ class Dialog extends Component
      * @return void
      */
     _registerEvents() {
-        // // Toggle overlay on UI toggle-os-overlay event
-        // this._ui.on('show-overlay', () => {
-        //     this._showSelf();
-        // });
-
-        // this._ui.on('hide-overlay', () => {
-        //     this._hideSelf();
-        // });
+        //
     }
 
     /**
      * Make a new dialog object
      * 
-     * @param {string} id 
-     * @param {mixed} body 
-     * @param {object} buttons 
+     * @param {options} buttons 
      */
-    _makeDialog(id = null, body, buttons = null) {
+    _makeDialog(options) {
         // Dialog container
         const dialogEl = document.createElement('div');
         dialogEl.classList.add('kc--dialog');
 
-        if (id) {
-            dialogEl.dataset.id = id;
+        if (options.id) {
+            dialogEl.dataset.id = options.id;
         }
 
-        // Dialog body container
-        const bodyEl = document.createElement('div');
-        bodyEl.classList.add('kc--dialog--body');
+        // Dialog title
+        if (options.title) {
+            const titleEl = document.createElement('div');
+            titleEl.classList.add('kc--dialog--title');
+            titleEl.innerText = options.title;
 
-        if (body) {            
-            if (typeof body === 'string') {
-                bodyEl.innerHTML = body;
+            // Append title to the dialog
+            dialogEl.appendChild(titleEl);
+        }
+
+        // Dialog body
+        if (options.body) {      
+            const bodyEl = document.createElement('div');
+            bodyEl.classList.add('kc--dialog--body');
+      
+            if (typeof options.body === 'string') {
+                bodyEl.innerHTML = options.body;
             } else {
-                bodyEl.appendChild(body);
+                bodyEl.appendChild(options.body);
             }
+
+            // Append body to the dialog
+            dialogEl.appendChild(bodyEl);
         }
 
-        // Append body to the dialog
-        dialogEl.appendChild(bodyEl);
-
-        // If the dialog has buttons
-        if (buttons) {
+        // Dialog buttons
+        if (options.buttons) {
             // Dialog buttons container
             const buttonsEl = document.createElement('div');
             buttonsEl.classList.add('kc--dialog--buttons');
 
             // Dialog buttons
-            for (let name in buttons) {
-                const btn = buttons[name];
+            for (let name in options.buttons) {
+                const btn = options.buttons[name];
 
                 const btnEl = document.createElement('button');
                 btnEl.classList.add('kc--dialog--button');
@@ -109,7 +110,8 @@ class Dialog extends Component
 
         return {
             el: dialogEl,
-            buttons: buttons,
+            buttons: options.buttons,
+            promiseExtras: options.promiseExtras,
         }
     }
 
@@ -140,12 +142,23 @@ class Dialog extends Component
 
         // Return a promise
         return new Promise((resolve, reject) => {
+            // When the overlay containing the dialog is closed - reject
+            const onOverlayClosed = this._ui.on('overlay-closed', () => {
+                this._ui.off(onOverlayClosed);
+
+                reject();
+            });
+
+            // Button handlers
             for (let name in dialog.buttons) {
                 const btn = dialog.buttons[name];
                 const btnEl = dialog.el.querySelector(`.${name}`);
 
                 btnEl.addEventListener('click', (e) => {
                     if (btn.closeDialog !== false) {
+                        // Remove the dialog events
+                        this._ui.off(onOverlayClosed);
+
                         // Destroy the dialog
                         dialog.el.remove();
                         this._openDialogsCount--;
@@ -156,9 +169,9 @@ class Dialog extends Component
                         }
                     }
                     
-                    // Custom handler
                     let res;
-
+                    
+                    // Custom handler
                     if (btn.handler) {
                         res = btn.handler(e);
                     }
@@ -170,19 +183,41 @@ class Dialog extends Component
                     }
                 }, { once: true });
             }
+
+            // Extras
+            if (dialog.promiseExtras) {
+                dialog.promiseExtras(dialog, resolve, reject, onOverlayClosed);
+            }
         });
     }
 
     /**
      * Show a (custom) dialog.
      * 
-     * @param {string} body
      * @param {object} options
      */
-    dialog(body, options) {
-        const dialog = this._makeDialog(options.id, body, options.buttons);
+    dialog(options = {}) {
+        const dialog = this._makeDialog(options);
 
         return this._runDialog(dialog);
+    }
+
+    /**
+     * Show an alert dialog.
+     * 
+     * @param {string} msg
+     * @param {string} id
+     */
+    alert(msg, id) {
+        return this.dialog({
+            id: id,
+            body: msg,
+            buttons: {
+                btnYes: {
+                    text: 'Ok',
+                },
+            }
+        });
     }
 
     /**
@@ -192,8 +227,9 @@ class Dialog extends Component
      * @param {string} id
      */
     confirm(msg, id = null) {
-        return this.dialog(msg, {
+        return this.dialog({
             id: id,
+            body: msg,
             buttons: {
                 btnYes: {
                     text: 'Yes',
@@ -203,7 +239,69 @@ class Dialog extends Component
                     reject: true,
                 },
             }
-        })
+        });
+    }
+
+    /**
+     * Show a select dialog.
+     * 
+     * @param {Array} options 
+     */
+    select(options) {
+        let list = '';
+        
+        if (options.options) {
+            const selected = options.selected ? options.selected : null;
+
+            list = document.createElement('ul');
+            list.classList.add('kc--dialog--select-list');
+
+            for (let value of Object.keys(options.options)) {
+                const li = document.createElement('li');
+                li.innerText = options.options[value];
+                li.dataset.value = value;
+
+                if (value == selected) {
+                    li.classList.add('active');
+                }
+
+                list.appendChild(li);
+            }
+        }
+
+        return this.dialog({
+            id: options.id,
+            title: options.title ? options.title : 'Select Option',
+            body: list,
+            buttons: {
+                btnCancel: {
+                    text: 'Cancel',
+                    reject: true,
+                },
+            },
+            promiseExtras: (dialog, resolve, reject, onOverlayClosed) => {
+                list.addEventListener('click', (e) => {
+                    if (e.target.nodeName.toLowerCase() === 'li') {
+                        const selectedValue = e.target.dataset.value;
+
+                        // Remove the dialog events
+                        this._ui.off(onOverlayClosed);
+
+                        // Destroy the dialog
+                        dialog.el.remove();
+                        this._openDialogsCount--;
+
+                        // Hide the overlay if there are no more open dialogs left
+                        if (!this._openDialogsCount) {
+                            this._overlay.hide();
+                        }
+
+                        // Return the selected value
+                        resolve(selectedValue);
+                    }
+                }, { once: false });
+            }
+        });
     }
 
     openDialogsCount() {
