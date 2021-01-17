@@ -23,13 +23,14 @@ class DB
         };
         this._resetQuery();
 
-        this._revActions = {
-            create: 'create',
-            edit: 'edit',
-            trash: 'trash',
-            restore: 'restore',
-            delete: 'delete',
-        };
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // this._revActions = {
+        //     create: 'create',
+        //     edit: 'edit',
+        //     trash: 'trash',
+        //     restore: 'restore',
+        //     delete: 'delete',
+        // };
 
         // this._dmp = new diff_match_patch();
     }
