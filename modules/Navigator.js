@@ -88,11 +88,17 @@ class Navigator
         return Navigator.currentPage;
     }
 
-    static async goTo(name, params = {}) {
+    static async goTo(name, params = {}, options = {}) {
         const page = Navigator.pages[name];
 
         if (!page) {
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
+        }
+
+        if (options.beforeNavigation) {
+            if (options.beforeNavigation() !== true) {
+                return false;
+            }
         }
 
         Navigator.currentPage = Object.assign({}, page, { params });

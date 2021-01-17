@@ -6,9 +6,11 @@
     export let beforeNavigation = () => true;
 
     function navigate() {
-        if (beforeNavigation() === true) {
-            Navigator.goTo(to, params);
-        }
+        const options = {
+            beforeNavigation: beforeNavigation,
+        };
+
+        Navigator.goTo(to, params, options);
     }
 </script>
 
