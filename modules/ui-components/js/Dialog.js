@@ -146,6 +146,8 @@ class Dialog extends Component
             const onOverlayClosed = this._ui.on('overlay-closed', () => {
                 this._ui.off(onOverlayClosed);
 
+                this._openDialogsCount--;
+
                 reject();
             });
 

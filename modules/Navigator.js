@@ -23,23 +23,32 @@ class Navigator
                 return;
             }
 
-            // A global beforeLeaving check
-            // TODO: Prevent going back if a dialog is open. Don't do anything else.
+            let canLeave = true;
+
+            // Global beforeLeaving checks
+            // Prevent going back if any dialogs are open
+            if (App._instance.ui.hasOpenDialogs()) {
+                canLeave = false;
+            }
 
             // The current page's beforeLeaving callback/check
             const beforeLeaving = Navigator.currentPage.beforeLeaving;
 
             if (beforeLeaving) {
                 if ((beforeLeaving.constructor.name === 'AsyncFunction' && !await beforeLeaving()) || !beforeLeaving()) {
-                    Navigator._goingForward = true;
-
-                    event.preventDefault();
-                    // Will trigger popstate again, which is ignore by setting
-                    // Navigator._goingForward to `true`
-                    history.go(1);
-
-                    return;
+                    canLeave = false;
                 }
+            }
+
+            if (!canLeave) {
+                Navigator._goingForward = true;
+
+                event.preventDefault();
+                // Will trigger popstate again, which is ignore by setting
+                // Navigator._goingForward to `true`
+                history.go(1);
+
+                return;
             }
 
             this._onBackButton(event);

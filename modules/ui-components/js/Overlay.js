@@ -56,15 +56,6 @@ class Overlay extends Component
                 this.hide();
             }
         });
-
-        // Toggle overlay on UI toggle-os-overlay event
-        this._ui.on('show-overlay', () => {
-            this.show();
-        });
-
-        this._ui.on('hide-overlay', () => {
-            this.hide();
-        });
     }
 
     show() {
