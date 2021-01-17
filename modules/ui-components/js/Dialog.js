@@ -309,6 +309,28 @@ class Dialog extends Component
     openDialogsCount() {
         return this._openDialogsCount;
     }
+
+    /**
+     * Close a dialog by ID
+     * 
+     * @param {string} id 
+     */
+    close(id) {
+        this._overlay.removeChild(`.kc--dialog[data-id="${id}"]`);
+        
+        this._openDialogsCount--;
+
+        if (this._openDialogsCount == 0) {
+            this._overlay.hide();
+        }
+    }
+
+    /**
+     * Close all open dialogs
+     */
+    closeAll() {
+        this._overlay.removeChildren();
+    }
 }
 
 export default Dialog;

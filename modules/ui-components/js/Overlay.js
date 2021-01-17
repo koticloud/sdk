@@ -76,6 +76,14 @@ class Overlay extends Component
         return document.querySelectorAll(selector).length > 0;
     }
 
+    removeChild(selector) {
+        const el = document.querySelector(selector);
+        
+        if (el) {
+            el.remove();
+        }
+    }
+
     removeChildren() {
         for (let child of this._el.children) {
             this._el.removeChild(child);

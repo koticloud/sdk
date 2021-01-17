@@ -100,10 +100,6 @@ class UI {
         return this._components.dialog.select(options);
     }
 
-    notify(text, type = 'info') {
-        return this._components.notification.add(text, type);
-    }
-
     /**
      * Determine whether there are any open dialogs
      * 
@@ -111,6 +107,32 @@ class UI {
      */
     hasOpenDialogs() {
         return this._components.dialog.openDialogsCount() > 0;
+    }
+
+    /**
+     * Close a dialog by ID
+     * 
+     * @param {string} id 
+     */
+    closeDialog(id) {
+        this._components.dialog.close(id);
+    }
+
+    /**
+     * Close all open dialogs
+     */
+    closeAllDialogs() {
+        this._components.dialog.closeAll();
+    }
+
+    /**
+     * Show a notification
+     * 
+     * @param {string} text 
+     * @param {string} type 
+     */
+    notify(text, type = 'info') {
+        return this._components.notification.add(text, type);
     }
 }
 
