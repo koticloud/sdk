@@ -11,7 +11,7 @@ class ApiMock
                 data: {
                     name: 'Koti Cloud App',
                     version: 'v1.0.0',
-                    version_updated_at: Date.now(),
+                    version_updated_at: Math.round(Date.now() / 1000),
                     sdk_version: 'v1.0.0',
                     icon: 'icon.png',
                     rating: 5.0,

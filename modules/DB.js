@@ -219,7 +219,7 @@ class DB
      * Get the current timestamp.
      */
     _now() {
-        return Date.now() / 1000;
+        return Math.round(Date.now() / 1000);
     }
 
     /**
