@@ -186,7 +186,7 @@ class IndexedDB extends DbDriver
 
                     // Take a subset of the results
                     const from = query.from ? query.from : 0;
-                    const to = (query.limit ? query.limit : results.length - 1)
+                    const to = (query.limit ? query.limit : results.total)
                         + from;
 
                     results.docs = results.docs.slice(from, to);
