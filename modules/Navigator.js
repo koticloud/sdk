@@ -27,7 +27,7 @@ class Navigator
 
             // Global beforeLeaving checks
             // Prevent going back if any dialogs are open
-            if (App._instance.ui.hasOpenDialogs()) {
+            if (App._instance && App._instance.ui.hasOpenDialogs()) {
                 canLeave = false;
             }
 
@@ -95,10 +95,16 @@ class Navigator
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
         }
 
+        // Additional checks before navigation, per-goTo() basis/scope
         if (options.beforeNavigation) {
             if (options.beforeNavigation() !== true) {
                 return false;
             }
+        }
+
+        // Don't navigate when there are any dialogs open
+        if (App._instance && App._instance.ui.hasOpenDialogs()) {
+            return false;
         }
 
         Navigator.currentPage = Object.assign({}, page, { params });
@@ -113,6 +119,7 @@ class Navigator
             Navigator._closeAppOnBackNavigation = false;
         }
 
+        // A global After Navigation callback
         if (Navigator._onAfterNavigation) {
             Navigator._onAfterNavigation();
         }
