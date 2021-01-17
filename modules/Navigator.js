@@ -35,8 +35,10 @@ class Navigator
             const beforeLeaving = Navigator.currentPage.beforeLeaving;
 
             if (beforeLeaving) {
-                if ((beforeLeaving.constructor.name === 'AsyncFunction' && !await beforeLeaving()) || !beforeLeaving()) {
-                    canLeave = false;
+                if (beforeLeaving.constructor.name === 'AsyncFunction') {
+                    canLeave = await beforeLeaving();
+                } else {
+                    canLeave = beforeLeaving();
                 }
             }
 
