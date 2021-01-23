@@ -2,7 +2,7 @@ import App from './App.js';
 
 class Navigator
 {
-    static _onAfterNavigation = {};
+    static _onAfterNavigation;
     static _goingForward = false;
     static _closeAppOnBackNavigation = false;
     static _eventSubscriptions = {};
