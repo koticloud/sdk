@@ -148,6 +148,9 @@ class Navigator
                 // back press won't "close" the app leaving us at the topmost
                 // (root) page, which is not bad either.
                 history.back();
+                // One call seems to be not enough on mobiles, so let's call it
+                // once more
+                history.back();
 
                 // Actually, history.back() seems to keep one additional entry
                 // in the history when on mobiles, so one extra back button
