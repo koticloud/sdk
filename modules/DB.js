@@ -580,6 +580,8 @@ class DB
             return true;
         }
 
+        this.emit('syncing');
+
         const docIds = allDocs.docs.map(item => item._id);
 
         // Upload the data
@@ -610,6 +612,8 @@ class DB
         if (this._syncing) {
             return;
         }
+
+        this.emit('syncing');
 
         this._syncing = true;
 
