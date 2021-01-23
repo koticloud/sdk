@@ -46,7 +46,7 @@ class Navigator
                 Navigator._goingForward = true;
 
                 event.preventDefault();
-                // Will trigger popstate again, which is ignore by setting
+                // Will trigger popstate again, which is ignored by setting
                 // Navigator._goingForward to `true`
                 history.go(1);
 
@@ -139,11 +139,22 @@ class Navigator
             // If there's no parent = we're at the root level -> close the app
             // on two back button presses in a row
             if (Navigator._closeAppOnBackNavigation) {
-                window.close();
+                // Going back in history seems to remove all the navigation
+                // history for the current app, probably because we're ever only
+                // changing/pushing the URL hash. Another back button press on a
+                // mobile would close the app (or return to the previous before
+                // the app page in a browser).
+                // If the app was open in a browser from a bookmark, the final
+                // back press won't "close" the app leaving us at the topmost
+                // (root) page, which is not bad either.
+                history.back();
             } else {
                 if (App._instance) {
                     App._instance.ui.notify('Press back button again to close the app');
                 }
+
+                this._goingForward = true;
+                history.go(1);
 
                 Navigator._closeAppOnBackNavigation = true;
             }
