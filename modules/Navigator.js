@@ -4,7 +4,7 @@ class Navigator
 {
     static _onAfterNavigation = {};
     static _goingForward = false;
-    static _closeAppOnBackNavigation = false;
+    // static _closeAppOnBackNavigation = false;
     static _eventSubscriptions = {};
 
     static pages;
@@ -116,10 +116,10 @@ class Navigator
 
         history.pushState({}, '', `#/${name}`);
 
-        // If this is not a root level page
-        if (page.parent) {
-            Navigator._closeAppOnBackNavigation = false;
-        }
+        // // If this is not a root level page
+        // if (page.parent) {
+        //     Navigator._closeAppOnBackNavigation = false;
+        // }
 
         // A global After Navigation callback
         if (Navigator._onAfterNavigation) {
@@ -136,9 +136,9 @@ class Navigator
         if (Navigator.currentPage.parent) {
             this.goBack();
         } else {
-            // If there's no parent = we're at the root level -> close the app
-            // on two back button presses in a row
-            if (Navigator._closeAppOnBackNavigation) {
+            // // If there's no parent = we're at the root level -> close the app
+            // // on two back button presses in a row
+            // if (Navigator._closeAppOnBackNavigation) {
                 // Going back in history seems to remove all the navigation
                 // history for the current app, probably because we're ever only
                 // changing/pushing the URL hash. Another back button press on a
@@ -148,16 +148,22 @@ class Navigator
                 // back press won't "close" the app leaving us at the topmost
                 // (root) page, which is not bad either.
                 history.back();
-            } else {
-                if (App._instance) {
-                    App._instance.ui.notify('Press back button again to close the app');
-                }
 
-                this._goingForward = true;
-                history.go(1);
+                // Actually, history.back() seems to keep one additional entry
+                // in the history when on mobiles, so one extra back button
+                // press is needed. Let's try to also close the window here.
+                // Worst case scenario it'll just return a warning.
+                // window.close();
+            // } else {
+            //     if (App._instance) {
+            //         App._instance.ui.notify('Press back button again to close the app');
+            //     }
 
-                Navigator._closeAppOnBackNavigation = true;
-            }
+            //     this._goingForward = true;
+            //     history.go(1);
+
+            //     // Navigator._closeAppOnBackNavigation = true;
+            // }
         }
     }
 
