@@ -137,7 +137,7 @@ class App {
             localStorage.setItem(this.localStorage.appInfo, JSON.stringify(this.info));
             
             this.latestVersion = this.info.version;
-            this.latestSdkVersion = this.info.version;
+            this.latestSdkVersion = this.info.sdk_version;
 
             App.setTitle();
         } catch (error) {
