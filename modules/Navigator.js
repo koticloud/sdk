@@ -109,6 +109,11 @@ class Navigator
             return false;
         }
 
+        // Combine default page parms with the current params
+        if (page.params && params) {
+            params = Object.assign(page.params, params);
+        }
+
         Navigator.currentPage = Object.assign({}, page, { params });
         Navigator.emit('current-page-updated', Navigator.currentPage);
 
