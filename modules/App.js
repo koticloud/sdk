@@ -139,7 +139,7 @@ class App {
             this.latestVersion = this.info.version;
             this.latestSdkVersion = this.info.sdk_version;
 
-            App.setTitle();
+            App.setTitleAppName();
         } catch (error) {
             // Ignore exception
             console.error('Error while fetching current app info!');
@@ -291,7 +291,7 @@ class App {
             } else {
                 console.error('DB sync has failed!');
 
-                console.log(error);
+                console.error(error);
             }
         }
     }
@@ -326,6 +326,30 @@ class App {
         if (finalTitle) {
             document.title = finalTitle;
         }
+    }
+
+    /**
+     * Set the Panel ("title bar") app title. Only update the app name part.
+     */
+    static setTitleAppName() {
+        const el = document.querySelector('.kc--panel--app-title');
+
+        if (!el) {
+            return;
+        }
+
+        // Get the non-app name part of the title if any
+        let title = el.innerText;
+        const index = title.indexOf('|') > -1 ? title.indexOf('|') + 1 : 0;
+        title = title.substr(index).trim();
+
+        const appName = (App._instance && App._instance.info && App._instance.info.name)
+            ? App._instance.info.name
+            : null;
+
+        // Re-set the page title, don't pass the current page title if it is the
+        // same as the app name
+        this.setTitle((title != appName) ? title : null);
     }
 }
 
