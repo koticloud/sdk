@@ -90,8 +90,14 @@ class Navigator
         return Navigator.currentPage;
     }
 
-    static async goTo(name, params = {}, options = {}) {
-        const page = Navigator.pages[name];
+    static async goTo(page, params = {}, options = {}) {
+        let name = page;
+
+        if (typeof page === 'string') {
+            page = Navigator.pages[name];
+        } else {
+            name = page.name;
+        }
 
         if (!page) {
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
@@ -109,7 +115,7 @@ class Navigator
             return false;
         }
 
-        // Combine default page parms with the current params
+        // Combine default page params with the current params
         if (page.params && params) {
             params = Object.assign(page.params, params);
         }
@@ -120,6 +126,9 @@ class Navigator
         App.setTitle(page.title);
 
         history.pushState({}, '', `#/${name}`);
+
+        // Save the current page state for back navigation
+        page.lastState = Object.assign({}, Navigator.currentPage);
 
         // If this is not a root level page
         if (page.parent) {
@@ -133,7 +142,15 @@ class Navigator
     }
 
     static goBack() {
-        this.goTo(Navigator.currentPage.parent.name);
+        let page = Navigator.currentPage.parent;
+
+        if (!page) {
+            return;
+        }
+
+        // If the parent page has a saved state from previous navigation then
+        // restore that state. Otherwise just open the parent page.
+        this.goTo(page.lastState ? page.lastState : page);
     }
 
     static _onBackButton(event) {
