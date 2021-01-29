@@ -2,7 +2,9 @@ import App from './App.js';
 
 class Navigator
 {
-    static _onAfterNavigation;
+    static _onBeforeEnteringEach = [];
+    static _onAfterEnteringEach = [];
+    static _onBeforeLeavingEach = [];
     static _goingForward = false;
     static _closeAppOnBackNavigation = false;
     static _eventSubscriptions = {};
@@ -32,15 +34,13 @@ class Navigator
             }
 
             // The current page's beforeLeaving callback/check
-            const beforeLeaving = Navigator.currentPage.beforeLeaving;
+            canLeave = await this.onBeforeLeaving(Navigator.currentPage);
 
-            if (beforeLeaving) {
-                if (beforeLeaving.constructor.name === 'AsyncFunction') {
-                    canLeave = await beforeLeaving();
-                } else {
-                    canLeave = beforeLeaving();
-                }
-            }
+            // A global beforeLeaving check
+            canLeave = canLeave && (await this.onBeforeLeavingEach(
+                Navigator.currentPage,
+                Navigator.currentPage.parent
+            ));
 
             if (!canLeave) {
                 Navigator._goingForward = true;
@@ -90,7 +90,7 @@ class Navigator
         return Navigator.currentPage;
     }
 
-    static async goTo(page, params = {}, options = {}) {
+    static async goTo(page, params = {}, options = {}, withBeforeLeavingCheck = true) {
         let name = page;
 
         if (typeof page === 'string') {
@@ -103,16 +103,26 @@ class Navigator
             throw `Navigator: Page with name "${name}" doesn\'t exist!`;
         }
 
-        // Additional checks before navigation, per-goTo() basis/scope
-        if (options.beforeNavigation) {
-            if (options.beforeNavigation() !== true) {
-                return false;
-            }
-        }
-
         // Don't navigate when there are any dialogs open
         if (App._instance && App._instance.ui.hasOpenDialogs()) {
             return false;
+        }
+
+        if (withBeforeLeavingCheck) {
+            let canLeave = true;
+            
+            if (Navigator.currentPage) {
+                // A beforeLeaving check for the current page
+                canLeave = await this.onBeforeLeaving(Navigator.currentPage);
+
+                // A global beforeLeaving check
+                canLeave = canLeave
+                    && (await this.onBeforeLeavingEach(Navigator.currentPage, page));
+
+                if (!canLeave) {
+                    return false;
+                }
+            }
         }
 
         // Combine default page params with the current params
@@ -120,8 +130,22 @@ class Navigator
             params = Object.assign(page.params, params);
         }
 
+        // A beforeEntering check for the new page
+        let canEnter = true;
+
+        canEnter = await this.onBeforeEntering(page);
+
+        // A global beforeEntering check
+        canEnter = canEnter
+            && (await this.onBeforeEnteringEach(Navigator.currentPage, page));
+
+        if (!canEnter) {
+            return false;
+        }
+
+        // Navigate to the new page
+        const prevPage = Object.assign({}, Navigator.currentPage);
         Navigator.currentPage = Object.assign({}, page, { params });
-        Navigator.emit('current-page-updated', Navigator.currentPage);
 
         App.setTitle(page.title);
 
@@ -135,13 +159,14 @@ class Navigator
             Navigator._closeAppOnBackNavigation = false;
         }
 
-        // A global After Navigation callback
-        if (Navigator._onAfterNavigation) {
-            Navigator._onAfterNavigation();
-        }
+        // A afterEntering callback for the new page
+        this.onAfterEntering(Navigator.currentPage);
+
+        // A global afterEntering callback
+        this.onAfterEnteringEach(prevPage, Navigator.currentPage);
     }
 
-    static goBack() {
+    static goBack(withBeforeLeavingCheck = true) {
         let page = Navigator.currentPage.parent;
 
         if (!page) {
@@ -150,13 +175,13 @@ class Navigator
 
         // If the parent page has a saved state from previous navigation then
         // restore that state. Otherwise just open the parent page.
-        this.goTo(page.lastState ? page.lastState : page);
+        this.goTo(page.lastState ? page.lastState : page, {}, {}, withBeforeLeavingCheck);
     }
 
     static _onBackButton(event) {
         // If the current page has a parent page - go one level up
         if (Navigator.currentPage.parent) {
-            this.goBack();
+            this.goBack(false);
         } else {
             // In browsers, calling history back goes to the previous page (the
             // page that was open before the app)
@@ -177,6 +202,52 @@ class Navigator
     }
 
     /**
+     * Attach a beforeEntering callback to the current page
+     * 
+     * @param {function} callback 
+     */
+    static beforeEntering(callback) {
+        const pages = Navigator.pages;
+
+        pages[Navigator.currentPage.name].beforeEntering = callback;
+        Navigator.currentPage.beforeEntering = callback;
+    }
+
+    static async onBeforeEntering(page) {
+        const beforeEntering = page.beforeEntering;
+
+        if (beforeEntering) {
+            if (beforeEntering.constructor.name === 'AsyncFunction') {
+                return await beforeEntering(Navigator.currentPage, page);
+            } else {
+                return beforeEntering(Navigator.currentPage, page);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Attach a afterEntering callback to the current page
+     * 
+     * @param {function} callback 
+     */
+    static afterEntering(callback) {
+        const pages = Navigator.pages;
+
+        pages[Navigator.currentPage.name].afterEntering = callback;
+        Navigator.currentPage.afterEntering = callback;
+    }
+
+    static onAfterEntering(page) {
+        const afterEntering = page.afterEntering;
+
+        if (afterEntering) {
+            afterEntering(Navigator.currentPage, page);
+        }
+    }
+
+    /**
      * Attach a beforeLeaving callback to the current page
      * 
      * @param {function} callback 
@@ -188,13 +259,79 @@ class Navigator
         Navigator.currentPage.beforeLeaving = callback;
     }
 
+    static async onBeforeLeaving(page) {
+        const beforeLeaving = page.beforeLeaving;
+
+        if (beforeLeaving) {
+            if (beforeLeaving.constructor.name === 'AsyncFunction') {
+                return await beforeLeaving(Navigator.currentPage, page);
+            } else {
+                return beforeLeaving(Navigator.currentPage, page);
+            }
+        }
+
+        return true;
+    }
+
     /**
-     * Add a global afterNavigation callback
+     * Set a beforeEnteringEach (global) callback
      * 
      * @param {function} callback 
      */
-    static afterNavigation(callback) {
-        Navigator._onAfterNavigation = callback;
+    static beforeEnteringEach(callback) {
+        Navigator._onBeforeEnteringEach.push(callback);
+    }
+
+    static async onBeforeEnteringEach(from, to) {
+        let canEnter = true;
+
+        for (let callback of Navigator._onBeforeEnteringEach) {
+            if (callback.constructor.name === 'AsyncFunction') {
+                canEnter = canEnter && (await callback(from, to));
+            } else {
+                canEnter = canEnter && callback(from, to);
+            }
+        }
+
+        return canEnter;
+    }
+
+    /**
+     * Set a afterEnteringEach (global) callback
+     * 
+     * @param {function} callback 
+     */
+    static afterEnteringEach(callback) {
+        Navigator._onAfterEnteringEach.push(callback);
+    }
+
+    static onAfterEnteringEach(from, to) {
+        Navigator._onAfterEnteringEach.forEach(callback => {
+            callback(from, to);
+        });
+    }
+
+    /**
+     * Set a beforeLeavingEach (global) callback
+     * 
+     * @param {function} callback 
+     */
+    static beforeLeavingEach(callback) {
+        Navigator._onBeforeLeavingEach.push(callback);
+    }
+
+    static async onBeforeLeavingEach(from, to) {
+        let canLeave = true;
+
+        for (let callback of Navigator._onBeforeLeavingEach) {
+            if (callback.constructor.name === 'AsyncFunction') {
+                canLeave = canLeave && (await callback(from, to));
+            } else {
+                canLeave = canLeave && callback(from, to);
+            }
+        }
+
+        return canLeave;
     }
 
     /**

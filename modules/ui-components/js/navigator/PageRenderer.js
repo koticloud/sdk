@@ -9,8 +9,8 @@ class PageRenderer extends HTMLElement
 
         this.currentPage = Navigator.currentPage;
 
-        Navigator.on('current-page-updated', (page) => {
-            this.currentPage = page;
+        Navigator.afterEnteringEach((from, to) => {
+            this.currentPage = to;
 
             this.render();
         });

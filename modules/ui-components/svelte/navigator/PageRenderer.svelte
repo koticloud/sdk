@@ -3,8 +3,8 @@
 
     let currentPage;
 
-    Navigator.on('current-page-updated', function (page) {
-        currentPage = page;
+    Navigator.afterEnteringEach((from, to) => {
+        currentPage = to;
     });
 </script>
 
