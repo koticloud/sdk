@@ -77,8 +77,11 @@ class Dialog extends Component
       
             if (typeof options.body === 'string') {
                 bodyEl.innerHTML = options.body;
+
             } else {
                 bodyEl.appendChild(options.body);
+
+                bodyEl.firstElementChild.style.display = 'block';
             }
 
             // Append body to the dialog
