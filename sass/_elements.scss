@@ -173,6 +173,13 @@
         margin: 0 .25rem;
         padding: .25rem;
 
+        /* Corrects font smoothing for webkit */
+        -webkit-font-smoothing: inherit;
+        -moz-osx-font-smoothing: inherit;
+
+        /* Corrects inability to style clickable `input` types in iOS */
+        -webkit-appearance: none;
+
         &:hover {
             border-bottom: 2px solid $infoBlue;
             color: #222;
@@ -184,6 +191,8 @@
 
         &::-moz-focus-inner {
             border: none;
+            border: 0;
+            padding: 0;
         }
     }
 }
