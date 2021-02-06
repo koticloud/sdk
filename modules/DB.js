@@ -406,6 +406,22 @@ class DB
     }
 
     /**
+     * Return the first query result.
+     */
+    async first() {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        // Call the driver method
+        const results = await this._driver.get(this._query);
+
+        // Reset the query
+        this._resetQuery();
+
+        return results.docs.length ? results.docs[0] : null;
+    }
+
+    /**
      * Get ALL existing docs, including the trashed and purged/deleted ones.
      */
     async getAll() {
