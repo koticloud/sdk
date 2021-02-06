@@ -98,6 +98,10 @@ class Dialog extends Component
             for (let name in options.buttons) {
                 const btn = options.buttons[name];
 
+                if (!isNaN(parseInt(name))) {
+                    name = `btn-${name}`;
+                }
+
                 const btnEl = document.createElement('button');
                 btnEl.classList.add('kc--dialog--button');
                 btnEl.classList.add(name);
@@ -157,6 +161,11 @@ class Dialog extends Component
             // Button handlers
             for (let name in dialog.buttons) {
                 const btn = dialog.buttons[name];
+
+                if (!isNaN(parseInt(name))) {
+                    name = `btn-${name}`;
+                }
+
                 const btnEl = dialog.el.querySelector(`.${name}`);
 
                 btnEl.addEventListener('click', (e) => {
