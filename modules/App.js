@@ -22,6 +22,9 @@ class App {
             appSdkVersion: 'app.sdk_version',
         };
 
+        // App state
+        this._userAuthenticated = true;
+
         // Modules
         this.db = null;
     }
@@ -288,12 +291,18 @@ class App {
         } catch (error) {
             if (error.response && error.response.status == 401) {
                 this.ui.notify('You are not logged in at Koti Cloud. Data synchronization between your devices and browsers will not work.');
+
+                this._userAuthenticated = false;
             } else {
                 console.error('DB sync has failed!');
 
                 console.error(error);
             }
         }
+    }
+
+    isAuthenticated() {
+        return this._userAuthenticated;
     }
 
     /**
