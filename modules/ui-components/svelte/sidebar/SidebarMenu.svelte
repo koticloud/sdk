@@ -28,6 +28,8 @@
         }
 
         activeItem = _itemName;
+
+        hideSidebar();
     }
 </script>
 
