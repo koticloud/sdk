@@ -1,6 +1,12 @@
 <script>
     import { showSidebar } from './showSidebar.js';
 
+    // Props
+    export let menu = {};
+    
+    // State
+    export let activeItem = null;
+
     (() => {
         registerEvents();
     })();
@@ -14,6 +20,14 @@
 
     function hideSidebar() {
         showSidebar.set(false);
+    }
+
+    function onItemClick(_item, _itemName) {
+        if (_item.handler) {
+            _item.handler();
+        }
+
+        activeItem = _itemName;
     }
 </script>
 
@@ -56,28 +70,30 @@ $navActiveBg: #414747;
     overflow-y: auto;
 }
 
+.sidebar .group-title {
+    color: #fafafa;
+    text-shadow: 0 0 1px #000;
+    padding: .75rem 0;
+    text-align: center;
+    text-transform: uppercase;
+    // TODO: See if more styling needed
+}
+
 .sidebar .nav-group {
     list-style: none;
     padding: .5rem 0;
 
     li {
         display: flex;
+        width: 100%;
         cursor: pointer;
         color: #cacaca;
-        text-shadow: 0 0 1px #000;
+        padding: .75rem 0;
+        padding-left: 2rem;
+        padding-right: 1rem;
         
         &:hover, &.active {
             background-color: $navActiveBg;
-        }
-
-        a {
-            width: 100%;
-            padding: .75rem 0;
-            padding-left: 2rem;
-            padding-right: 1rem;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
         }
     }
 
@@ -125,6 +141,10 @@ $navActiveBg: #414747;
 .sidebar .nav-separator {
     border: 1px solid $navActiveBg;
     margin: .5rem 0;
+
+    &:last-of-type {
+        display: none;
+    }
 }
 </style>
 
@@ -133,77 +153,31 @@ $navActiveBg: #414747;
     on:click|self={hideSidebar}
 >
     <div class="sidebar kc--noselect">
-        <!-- TODO: DEBUG -->
-        <p>SidebarMenu!!1</p>
+        {#each Object.keys(menu) as navGroup}
+            {#if menu[navGroup].title}
+                <div class="group-title">{navGroup}</div>
+            {/if}
 
-        <p>Show: { $showSidebar }</p>
-        <!-- TODO: DEBUG -->
+            {#if menu[navGroup].items && Object.keys(menu[navGroup].items).length}
+                <ul class="nav-group">
+                    {#each Object.keys(menu[navGroup].items) as itemName}
+                        <li title={menu[navGroup].items[itemName].title ? menu[navGroup].items[itemName].title : ''}
+                            class:active={ activeItem === itemName }
+                            on:click={() => onItemClick(menu[navGroup].items[itemName], itemName)}
+                        >
+                            <div class="icon">
+                                {@html menu[navGroup].items[itemName].icon}
+                            </div>
 
-        <!-- <ul class="nav-group">
-            <li title="All Notes"
-                :class="{ 'active': isCategory('all') }"
-            >
-                <router-link :to="{
-                    name: 'notes.category',
-                    params: { category: 'all' }
-                }">
-                    <div class="icon">
-                        <i class="far fa-copy"></i>
-                    </div>
+                            <div class="title">
+                                {menu[navGroup].items[itemName].title}
+                            </div>
+                        </li>
+                    {/each}
+                </ul>
 
-                    <div class="title">All Notes</div>
-                </router-link>
-            </li>
-
-            <li title="Trash"
-                :class="{ 'active': isCategory('trash') }"
-            >
-                <router-link :to="{
-                    name: 'notes.category',
-                    params: { category: 'trash' }
-                }">
-                    <div class="icon">
-                        <i class="far fa-trash-alt"></i>
-                    </div>
-
-                    <div class="title">Trash</div>
-                </router-link>
-            </li>
-
-            <li title="Manage Tags"
-                :class="{ 'active': isCategory('tags') }"
-            >
-                <router-link :to="{
-                    name: 'tags',
-                }">
-                    <div class="icon">
-                        <i class="fas fa-tags"></i>
-                    </div>
-
-                    <div class="title">Manage Tags</div>
-                </router-link>
-            </li>
-        </ul>
-        
-        <hr v-show="tagList.length" class="nav-separator">
-
-        <ul v-show="tagList.length" class="nav-group">
-            <li v-for="(tag, index) in tagList"
-                :key="index"
-                :title="tag.tag"
-                :class="{ 'active': isCategory(`tag-${tag.slug}`) }"
-            >
-                <router-link :to="{
-                    name: 'notes.category',
-                    params: { category: `tag-${tag.slug}` }
-                }">
-                    <div class="icon">
-                        <i class="fas fa-tag"></i>
-                    </div>
-
-                    <div class="title" v-text="tag.tag"></div>
-                </router-link>
-            </li>
-        </ul> -->
+                <hr class="nav-separator">
+            {/if}
+        {/each}
     </div>
 </div>
