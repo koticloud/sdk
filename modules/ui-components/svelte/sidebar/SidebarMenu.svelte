@@ -137,7 +137,6 @@ $navActiveBg: #414747;
     padding: .75rem 0;
     text-align: center;
     text-transform: uppercase;
-    // TODO: See if more styling needed
 }
 
 .sidebar .nav-group {
@@ -152,6 +151,7 @@ $navActiveBg: #414747;
         padding: .75rem 0;
         padding-left: 2rem;
         padding-right: 1rem;
+        margin-right: 1rem;
         
         &:hover, &.active {
             background-color: $navActiveBg;
