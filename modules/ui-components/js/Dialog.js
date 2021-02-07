@@ -52,6 +52,10 @@ class Dialog extends Component
      * @param {options} buttons 
      */
     _makeDialog(options) {
+        // Dialog wrapper (needed to add extra margin to the dialog)
+        const dialogWrapper = document.createElement('div');
+        dialogWrapper.classList.add('kc--dialog--wrapper');
+        
         // Dialog container
         const dialogEl = document.createElement('div');
         dialogEl.classList.add('kc--dialog');
@@ -115,8 +119,10 @@ class Dialog extends Component
             dialogEl.appendChild(buttonsEl);
         }
 
+        dialogWrapper.appendChild(dialogEl);
+
         return {
-            el: dialogEl,
+            el: dialogWrapper,
             buttons: options.buttons,
             promiseExtras: options.promiseExtras,
         }
