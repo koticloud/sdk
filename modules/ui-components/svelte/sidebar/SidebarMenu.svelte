@@ -1,11 +1,12 @@
 <script>
     import { showSidebar } from './showSidebar.js';
+    import Navigator from '../../../Navigator.js';
 
     // Props
     export let menu = {};
     
     // State
-    export let activeItem = null;
+    let activeItem = null;
 
     (() => {
         registerEvents();
@@ -16,6 +17,56 @@
             // Hide the forced sidebar on window resize
             showSidebar.set(false);
         });
+
+        Navigator.afterEnteringEach(async (from, to) => {
+            // After navigating to a page - change active item if any of the
+            // menu items correspond to that page
+            const itemName = findItemNameForPage(to);
+
+            if (itemName) {
+                activeItem = itemName;
+            }
+        });
+    }
+
+    function findItemNameForPage(page) {
+        for (let navGroup in menu) {
+            if (!menu[navGroup].items || !Object.keys(menu[navGroup]).length) {
+                return null;
+            }
+
+            for (let itemName in menu[navGroup].items) {
+                const item = menu[navGroup].items[itemName];
+
+                if (!item.page) {
+                    return null;
+                }
+
+                if (item.page.name && item.page.name === page.name && pageHasParams(page, item.page.params)) {
+                    return itemName;
+                }
+            }
+        }
+
+        function pageHasParams(page, params) {
+            if (!params) {
+                return true;
+            }
+
+            if (page.params === undefined) {
+                return false;
+            }
+
+            for (let field in params) {
+                if (page.params[field] !== params[field]) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return null;
     }
 
     function hideSidebar() {
@@ -23,11 +74,19 @@
     }
 
     function onItemClick(_item, _itemName) {
-        if (_item.handler) {
+        if (_item.page) {
+            if (!_item.page.name) {
+                return;
+            }
+
+            const pageParams = _item.page.params ? _item.page.params : {};
+
+            Navigator.goTo(_item.page.name, pageParams);
+
+            activeItem = _itemName;
+        } else if (_item.handler) {
             _item.handler();
         }
-
-        activeItem = _itemName;
 
         hideSidebar();
     }
