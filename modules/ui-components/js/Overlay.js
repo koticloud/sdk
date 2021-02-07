@@ -89,6 +89,10 @@ class Overlay extends Component
             this._el.removeChild(child);
         }
     }
+
+    resetScroll() {
+        this._el.scrollTo(0, 0);
+    }
 }
 
 export default Overlay;

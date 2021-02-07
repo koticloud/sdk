@@ -153,6 +153,9 @@ class Dialog extends Component
         // Show the overlay with all the elements (if it is not shown yet)
         this._overlay.show();
 
+        // Reset vertical scroll
+        this._overlay.resetScroll();
+
         // Return a promise
         return new Promise((resolve, reject) => {
             // When the overlay containing the dialog is closed - reject
