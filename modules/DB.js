@@ -227,9 +227,8 @@ class DB
      * object is not unique.
      * 
      * @param {object} data
-     * @param {bool} updateMetadata
      */
-    async create(data, updateMetadata = true) {
+    async create(data) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -242,7 +241,7 @@ class DB
             _deleted_at: null,
             _purged: 0,
             _synced: false,
-            _revs: [],
+            // _revs: [], // TODO: Temporarily disabled as not using diff/patch anymore
         });
 
         // TODO: Temporarily disabled as not using diff/patch anymore
@@ -271,9 +270,9 @@ class DB
      * Update an existing document.
      * 
      * @param {object} doc 
-     * @param {bool} updateMetadata
+     * @param {object} options
      */
-    async update(doc, updateMetadata = true) {
+    async update(doc, options = {}) {
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -282,9 +281,13 @@ class DB
         // const before = await this.withTrashed().getById(doc._id);
 
         // Update the document's metadata
-        if (updateMetadata) {
-            doc._updated_at = this._now();
+        if (options.metadata !== false) {
             doc._synced = false;
+        }
+
+        // Update the document's timestamps
+        if (options.timestamps !== false) {
+            doc._updated_at = this._now();
         }
 
         // TODO: Temporarily disabled as not using diff/patch anymore
@@ -300,14 +303,15 @@ class DB
     /**
      * Update an existing document or create a new one if it doesn't exist.
      * 
-     * @param {PouchDB doc}|obeject data 
+     * @param object data 
+     * @param {object} options
      */
-    async updateOrCreate(doc) {
+    async updateOrCreate(doc, options = {}) {
         // Make sure the driver is initialized
         await this._initDriver();
 
         return (doc._id && doc._created_at)
-            ? await this.update(doc)
+            ? await this.update(doc, options)
             : await this.create(doc);
     }
 
@@ -669,7 +673,10 @@ class DB
             // Mark the uploaded docs as synced
             doc._synced = true;
 
-            this.update(doc, false);
+            this.update(doc, {
+                metadata: false,
+                timestamps: false,
+            });
         }
 
         // Server returns a list of invalid docs that we should delete
@@ -721,7 +728,10 @@ class DB
 
             if (localDoc) {
                 // Update the doc
-                this.update(docData, false);
+                this.update(docData, {
+                    metadata: false,
+                    timestamps: false,
+                });
             } else {
                 // Otherwise store a new doc
                 await this.store(docData);
