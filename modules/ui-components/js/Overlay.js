@@ -58,8 +58,12 @@ class Overlay extends Component
         });
     }
 
+    isVisibile() {
+        return this._el.classList.contains('kc--overlay--show');
+    }
+
     show() {
-        if (!this._el.classList.contains('kc--overlay--show')) {
+        if (!this.isVisibile()) {
             this._el.classList.add('kc--overlay--show');
         }
     }

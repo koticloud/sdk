@@ -63,6 +63,15 @@ class UI {
     }
 
     /**
+     * Whether the overlay is visible
+     * 
+     * @return boolean
+     */
+    overlayVisible() {
+        return this._components.overlay.isVisibile();
+    }
+
+    /**
      * Show an alert (message) dialog.
      * 
      * @param {string} msg
