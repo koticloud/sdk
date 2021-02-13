@@ -127,7 +127,7 @@ class Navigator
 
         // Combine default page params with the current params
         if (page.params && params) {
-            params = Object.assign(page.params, params);
+            params = Object.assign({}, page.params, params);
         }
 
         // A beforeEntering check for the new page
