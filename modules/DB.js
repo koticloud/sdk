@@ -577,122 +577,142 @@ class DB
      * which will return a list of invalid docs which we can then wipe out.
      */
     async validate() {
-        // Make sure the driver is initialized
-        await this._initDriver();
+        try {
+            // Make sure the driver is initialized
+            await this._initDriver();
 
-        // Don't validate when offline
-        if (!this.isOnline()) {
-            return;
-        }
+            // Don't validate when offline
+            if (!this.isOnline()) {
+                return;
+            }
 
-        if (this._validating) {
-            return;
-        }
+            if (this._validating) {
+                return;
+            }
 
-        this._validating = true;
+            this._validating = true;
 
-        // Get IDs of all the docs
-        const allDocs = await this.withTrashed()
-            ._withPurged()
-            .get();
+            // Get IDs of all the docs
+            const allDocs = await this.withTrashed()
+                ._withPurged()
+                .get();
 
-        if (!allDocs.docs.length) {
+            if (!allDocs.docs.length) {
+                return true;
+            }
+
+            this.emit('syncing');
+
+            const docIds = allDocs.docs.map(item => item._id);
+
+            // Upload the data
+            const response = await Api.validateDocs(docIds);
+
+            // Server returns a list of invalid docs that we should delete
+            await this._syncWipeInvalidDocs(response.data.invalid);
+
+            this._validating = false;
+
+            this.emit('synced');
+
             return true;
+        } catch (error) {
+            // NOTE: Seems like the event is sent too soon and is not being
+            // caught in the apps without a timeout (at the "sync on app start")
+            setTimeout(() => {
+                this.emit('sync-failed', error);
+            });
+
+            throw error;
         }
-
-        this.emit('syncing');
-
-        const docIds = allDocs.docs.map(item => item._id);
-
-        // Upload the data
-        const response = await Api.validateDocs(docIds);
-
-        // Server returns a list of invalid docs that we should delete
-        await this._syncWipeInvalidDocs(response.data.invalid);
-
-        this._validating = false;
-
-        this.emit('synced');
-
-        return true;
     }
 
     /**
      * Sync the DB with Koti Cloud server.
      */
     async sync() {
-        // Make sure the driver is initialized
-        await this._initDriver();
+        try {
+            // Make sure the driver is initialized
+            await this._initDriver();
 
-        // Don't try to sync when offline
-        if (!this.isOnline()) {
-            return;
-        }
-
-        if (this._syncing) {
-            return;
-        }
-
-        this.emit('syncing');
-
-        this._syncing = true;
-
-        // Get the latest '_updated_at' timestamp among all the synced docs
-        const allSyncedDocs = await this.withTrashed()
-            ._withPurged()
-            .where('_synced', true)
-            .orderBy('_updated_at', 'desc')
-            .get();
-
-        let lastSyncAt = 0;
-
-        if (allSyncedDocs.docs.length) {
-            lastSyncAt = allSyncedDocs.docs[0]._updated_at;
-        }
-
-        // Prepare the list of docs to upload
-        let docsToUpload = await this.withTrashed()
-            ._withPurged()
-            .where('_synced', false)
-            .get();
-
-        docsToUpload = docsToUpload.docs;
-
-        // Upload the data
-        const response = await Api.syncLww(lastSyncAt, docsToUpload);
-
-        // Update local docs on success
-        for (let doc of docsToUpload) {
-            // Delete the purged docs forever
-            if (doc._purged) {
-                await this._deleteById(doc._id);
-
-                continue;
+            // Don't try to sync when offline
+            if (!this.isOnline()) {
+                return;
             }
 
-            // Mark the uploaded docs as synced
-            doc._synced = true;
+            if (this._syncing) {
+                return;
+            }
 
-            this.update(doc, {
-                metadata: false,
-                timestamps: false,
+            this.emit('syncing');
+
+            this._syncing = true;
+
+            // Get the latest '_updated_at' timestamp among all the synced docs
+            const allSyncedDocs = await this.withTrashed()
+                ._withPurged()
+                .where('_synced', true)
+                .orderBy('_updated_at', 'desc')
+                .get();
+
+            let lastSyncAt = 0;
+
+            if (allSyncedDocs.docs.length) {
+                lastSyncAt = allSyncedDocs.docs[0]._updated_at;
+            }
+
+            // Prepare the list of docs to upload
+            let docsToUpload = await this.withTrashed()
+                ._withPurged()
+                .where('_synced', false)
+                .get();
+
+            docsToUpload = docsToUpload.docs;
+
+            // Upload the data
+            const response = await Api.syncLww(lastSyncAt, docsToUpload);
+
+            // Update local docs on success
+            for (let doc of docsToUpload) {
+                // Delete the purged docs forever
+                if (doc._purged) {
+                    await this._deleteById(doc._id);
+
+                    continue;
+                }
+
+                // Mark the uploaded docs as synced
+                doc._synced = true;
+
+                this.update(doc, {
+                    metadata: false,
+                    timestamps: false,
+                });
+            }
+
+            // Server returns a list of invalid docs that we should delete
+            await this._syncWipeInvalidDocs(response.data.invalid);
+
+            // Server returns data that we're missing locally. Save that data.
+            await this._syncDownloadedChanges(response.data.downloads);
+
+            // // Delete the docs that were purged/deleted from the server
+            // await this.syncDeletePurged(diffs.deleted);
+
+            this._syncing = false;
+
+            this.emit('synced');
+
+            return true;
+        } catch (error) {
+            // NOTE: Seems like the event is sent too soon and is not being
+            // caught in the apps without a timeout (at the "sync on app start")
+            setTimeout(() => {
+                this.emit('sync-failed', error);
             });
+
+            throw error;
         }
-
-        // Server returns a list of invalid docs that we should delete
-        await this._syncWipeInvalidDocs(response.data.invalid);
-
-        // Server returns data that we're missing locally. Save that data.
-        await this._syncDownloadedChanges(response.data.downloads);
-
-        // // Delete the docs that were purged/deleted from the server
-        // await this.syncDeletePurged(diffs.deleted);
-
-        this._syncing = false;
-
-        this.emit('synced');
-
-        return true;
     }
 
     /**

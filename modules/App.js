@@ -293,10 +293,6 @@ class App {
                 this.ui.notify('You are not logged in at Koti Cloud. Data synchronization between your devices and browsers will not work.');
 
                 this._userAuthenticated = false;
-            } else {
-                console.error('DB sync has failed!');
-
-                console.error(error);
             }
         }
     }
