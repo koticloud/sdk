@@ -123,6 +123,7 @@
         padding: 1rem;
         box-shadow: 0 0 .75rem #999;
         cursor: pointer;
+        word-wrap: break-word;
 
         &.info { border-bottom: 3px solid $infoBlue; }
         &.error { border-bottom: 3px solid $dangerRed; }
