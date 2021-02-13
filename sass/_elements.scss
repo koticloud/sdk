@@ -16,7 +16,6 @@
 
     display: none;
     justify-content: center;
-    align-items: safe center;
 
     &--show {
         display: flex;
@@ -25,6 +24,7 @@
 
 .kc--dialog--wrapper {
     padding: 2rem 0;
+    margin: auto;
 }
 
 .kc--dialog {
