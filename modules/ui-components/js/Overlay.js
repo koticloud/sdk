@@ -47,7 +47,7 @@ class Overlay extends Component
     _registerEvents() {
         // Close overlay on overlay click
         this._el.addEventListener('click', (e) => {
-            // Only when click on the overlay element directly
+            // Only when clicking on the overlay element directly
             if (e.target === this._el) {
                 this._ui.emit('overlay-closed');
     
