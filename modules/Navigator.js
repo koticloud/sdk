@@ -108,6 +108,14 @@ class Navigator
             return false;
         }
 
+        // Combine default page params with the current params
+        if (page.params && params) {
+            params = Object.assign({}, page.params, params);
+        }
+
+        // Create a clone of the page object to keep the original object intact
+        const toPage = Object.assign({}, page, { params });
+
         if (withBeforeLeavingCheck) {
             let canLeave = true;
             
@@ -117,7 +125,7 @@ class Navigator
 
                 // A global beforeLeaving check
                 canLeave = canLeave
-                    && (await this.onBeforeLeavingEach(Navigator.currentPage, page));
+                    && (await this.onBeforeLeavingEach(Navigator.currentPage, toPage));
 
                 if (!canLeave) {
                     return false;
@@ -125,19 +133,14 @@ class Navigator
             }
         }
 
-        // Combine default page params with the current params
-        if (page.params && params) {
-            params = Object.assign({}, page.params, params);
-        }
-
         // A beforeEntering check for the new page
         let canEnter = true;
 
-        canEnter = await this.onBeforeEntering(page);
+        canEnter = await this.onBeforeEntering(toPage);
 
         // A global beforeEntering check
         canEnter = canEnter
-            && (await this.onBeforeEnteringEach(Navigator.currentPage, page));
+            && (await this.onBeforeEnteringEach(Navigator.currentPage, toPage));
 
         if (!canEnter) {
             return false;
@@ -145,14 +148,17 @@ class Navigator
 
         // Navigate to the new page
         const prevPage = Object.assign({}, Navigator.currentPage);
-        Navigator.currentPage = Object.assign({}, page, { params });
+        Navigator.currentPage = toPage;
 
-        App.setTitle(page.title);
+        App.setTitle(toPage.title);
 
         history.pushState({}, '', `#/${name}`);
 
-        // Save the current page state for back navigation
+        // Save the current page state for back navigation (here we modify the
+        // original page object)
         page.lastState = Object.assign({}, Navigator.currentPage);
+        // console.log(page.lastState);
+        // console.log(page.lastState.params);
 
         // If this is not a root level page
         if (page.parent) {
