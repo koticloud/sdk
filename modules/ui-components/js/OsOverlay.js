@@ -41,9 +41,9 @@ class OsOverlay extends Component
     _getTemplate() {
         return `
             <div class="kc--os-overlay--actions">
-                <a href="#" class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data">Clear Local Data</a>
+                <button class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data">Clear Local Data</button>
 
-                <a href="#" class="kc--os-overlay--btn-link kc--os-overlay--actions--force-update">Force-Update</a>
+                <button class="kc--os-overlay--btn-link kc--os-overlay--actions--force-update">Force-Update</button>
             </div>
         `;
     }
@@ -85,7 +85,7 @@ class OsOverlay extends Component
     _toggleSelf() {
         if (!this._el.classList.contains('kc--os-overlay--show')) {
             const offset = document.querySelector('.kc--panel')
-                .clientHeight + 2; // 2px = border-bottom height
+                .clientHeight;
 
             this._el.style.marginTop = `${offset}px`;
         }

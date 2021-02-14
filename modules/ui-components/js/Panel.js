@@ -38,7 +38,7 @@ class Panel extends Component
     _getTemplate() {
         return `
             <div class="kc--panel--left">
-                <a href="#" class="kc--panel--btn-link kc--panel--btn-koti-cloud">Koti Cloud</a>
+                <button class="kc--panel--btn-link kc--panel--btn-koti-cloud">Koti Cloud</button>
             </div>
 
             <div class="kc--panel--right">

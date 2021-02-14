@@ -166,6 +166,7 @@
     }
 
     &--btn-link {
+        display: inline-block;
         background: none;
         border: none;
         text-decoration: none;
@@ -173,10 +174,13 @@
         outline: none;
         font-size: 1rem;
         font-family: inherit;
+        line-height: normal;
         color: #444;
         cursor: pointer;
         margin: 0 .25rem;
         padding: .25rem;
+        text-align: inherit;
+        border-radius: 0;
 
         /* Corrects font smoothing for webkit */
         -webkit-font-smoothing: inherit;
@@ -195,7 +199,6 @@
         }
 
         &::-moz-focus-inner {
-            border: none;
             border: 0;
             padding: 0;
         }
@@ -207,12 +210,11 @@
 
     z-index: 2147483647; /* Max value is 2147483647 */
     display: flex;
+    align-items: center;
     left: 0;
     top: 0;
     width: 100%;
-    padding: .25rem;
     background: #222;
-    border-bottom: 2px solid transparent;
     color: #ddd;
     font-size: .9rem;
     white-space: nowrap;
@@ -246,7 +248,19 @@
         }
 
         &::-moz-focus-inner {
-            border: none;
+            border: 0;
+            padding: 0;
+        }
+
+        /* Corrects font smoothing for webkit */
+        -webkit-font-smoothing: inherit;
+        -moz-osx-font-smoothing: inherit;
+
+        /* Corrects inability to style clickable `input` types in iOS */
+        -webkit-appearance: none;
+
+        &:focus, &:active {
+            outline: none;
         }
     }
 
