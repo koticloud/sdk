@@ -61,7 +61,7 @@ class Dialog extends Component
         dialogEl.classList.add('kc--dialog');
 
         if (options.id) {
-            dialogEl.dataset.id = options.id;
+            dialogWrapper.dataset.id = options.id;
         }
 
         // Dialog title
@@ -137,9 +137,9 @@ class Dialog extends Component
         // If an id was specified
         if (dialog.el.dataset.id) {
             const id = dialog.el.dataset.id;
-        
+
             // If dialog with this id already exists - don't append a new one
-            if (this._overlay.hasChild(`.kc--dialog[data-id="${id}"]`)) {
+            if (this._overlay.hasChild(`.kc--dialog--wrapper[data-id="${id}"]`)) {
                 return new Promise((resolve, reject) => {
                     reject();
                 });
