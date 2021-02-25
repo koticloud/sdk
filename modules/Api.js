@@ -23,7 +23,7 @@ class Api {
             return ApiMock.getCurrentAppInfo();
         }
 
-        return axios.get(`${this.baseUrl()}/api/apps/current`);
+        return axios.post(`/api/apps/current`);
     }
 
     /**
