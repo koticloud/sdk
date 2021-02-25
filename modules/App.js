@@ -117,6 +117,17 @@ class App {
     }
 
     /**
+     * Get Koti Cloud base URL (Koti Cloud home/root page).
+     * 
+     * @return {string}
+     */
+    baseUrl() {
+        const locationPaths = location.host.split('\.');
+
+        return `${location.protocol}//${locationPaths.slice(-2).join('\.')}`;
+    }
+
+    /**
      * Check whether the app has a newer version than the installed one
      * 
      * @response boolean
@@ -290,7 +301,7 @@ class App {
             await this.db.sync();
         } catch (error) {
             if (error.response && error.response.status == 401) {
-                this.ui.notify('You are not logged in at Koti Cloud. Data synchronization between your devices and browsers will not work.');
+                this.ui.notify(`You are not logged in at <a href="${this.baseUrl()}" target="_blank" rel="noopener noreferrer">Koti Cloud</a>. Data synchronization between your devices and browsers will not work.`);
 
                 this._userAuthenticated = false;
             }

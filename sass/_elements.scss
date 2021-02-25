@@ -1,6 +1,10 @@
 .kc {
     display: flex;
     flex-direction: column;
+
+    a {
+        color: $infoBlue;
+    }
 }
 
 .kc--overlay {

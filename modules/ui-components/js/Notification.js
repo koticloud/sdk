@@ -57,7 +57,7 @@ class Notification extends Component
         const notification = document.createElement('div');
         notification.classList.add('kc--notification');
         notification.classList.add(type);
-        notification.innerText = text;
+        notification.innerHTML = text;
 
         this._el.appendChild(notification);
 
