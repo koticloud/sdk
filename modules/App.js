@@ -312,6 +312,18 @@ class App {
         return this._userAuthenticated;
     }
 
+    appName() {
+        return (this.info && this.info.name)
+            ? this.info.name
+            : null;
+    }
+
+    static appName() {
+        return (App._instance && App._instance.info && App._instance.info.name)
+            ? App._instance.info.name
+            : null;
+    }
+
     /**
      * Set the Panel ("title bar") app title
      * 
@@ -324,9 +336,7 @@ class App {
             return;
         }
 
-        const appName = (App._instance && App._instance.info && App._instance.info.name)
-            ? App._instance.info.name
-            : null;
+        const appName = App.appName();
 
         let finalTitle;
 
@@ -359,9 +369,7 @@ class App {
         const index = title.indexOf('|') > -1 ? title.indexOf('|') + 1 : 0;
         title = title.substr(index).trim();
 
-        const appName = (App._instance && App._instance.info && App._instance.info.name)
-            ? App._instance.info.name
-            : null;
+        const appName = App.appName();
 
         // Re-set the page title, don't pass the current page title if it is the
         // same as the app name

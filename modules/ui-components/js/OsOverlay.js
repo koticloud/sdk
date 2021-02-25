@@ -40,10 +40,28 @@ class OsOverlay extends Component
      */
     _getTemplate() {
         return `
-            <div class="kc--os-overlay--actions">
+            <p class="kc--mb-1">
+                ${this._app.appName()} ${this._app.installedVersion}
+            </p>
+
+            <div class="kc--os-overlay--actions kc--mb-1">
                 <button class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data">Clear Local Data</button>
 
                 <button class="kc--os-overlay--btn-link kc--os-overlay--actions--force-update">Force-Update</button>
+            </div>
+
+            <p class="kc--mb-1">
+                Koti Cloud
+            </p>
+
+            <div class="kc--os-overlay--actions">
+                <a href="${this._app.baseUrl()}/"
+                    class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data"
+                >Home Page</a>
+
+                <a href="${this._app.baseUrl()}/apps"
+                    class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data"
+                >More Apps</a>
             </div>
         `;
     }
