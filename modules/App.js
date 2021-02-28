@@ -235,47 +235,69 @@ class App {
             return;
         }
 
-        // Update the app
-        window.caches.open('koti-cloud-noted').then(async (cache) => {
-            const updatePromises = [];
+        // First step - clear the cache
+        const clearCachePromises = [];
 
-            // Clear files that were cached until the next update
-            for (let file of this._cacheables.untilUpdate) {
-                updatePromises.push(cache.delete(file));
-            }
-
-            // After all the required files were deleted from cache
-            Promise.all(updatePromises)
-                .then(async (values) => {
-                    // Unregister the service worker (will be updated on the next page
-                    // refresh)
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-
-                    for (let registration of registrations) {
-                        await registration.unregister();
+        // The process is completely asynchronous. We have to open each cache,
+        // wait for results, then schedule specific file deletion.
+        caches.keys().then((keyList) => {
+            keyList.map((key) => {
+                window.caches.open(key).then((cache) => {
+                    // Clear files that were cached until the next update
+                    for (let file of this._cacheables.untilUpdate) {
+                        clearCachePromises.push(cache.delete(file));
                     }
 
-                    // Update version number in localStorage
-                    this._updateLocalVersion(this.latestVersion, this.latestSdkVersion);
-
-                    // Ask the user a permission to restart the app now
-                    const msg = `The app will be updated on the next restart. The operation requires internet connection and might take some time. Do you want to restart now?`;
-
-                    this.ui.confirm(msg, 'koti-cloud-sdk--app-updated-dialog')
-                        .then(res => {
-                            // Refresh the page so that the removed files could
-                            // downloaded & cached anew
-                            location.reload();
-                        })
-                        .catch(res => {
-                            // Do nothing
-                        });
-                })
-                .catch((response) => {
-                    // Notify user about a fail
-                    this.ui.notify('Some or all of the files failed to update. You can restart the app and try again.', 'error');
+                    // When all the files have been scheduled for deletion,
+                    // proceed to the next step
+                    if (clearCachePromises.length === keyList.length * this._cacheables.untilUpdate.length) {
+                        this._doUpdate(clearCachePromises);
+                        console.log('Cache can be cleared..');
+                    }
                 });
+            });
         });
+    }
+
+    /**
+     * Wait for the cached files to be deleted, then unregister the service
+     * worker and offer the user to refresh the web page - so that the updated
+     * service worker could be registered and updated app files fetched and 
+     * cached.
+     */
+    _doUpdate(clearCachePromises) {
+        // After all the required files were deleted from cache
+        Promise.all(clearCachePromises)
+            .then(async (values) => {
+                console.log('Cache cleared!');
+                // Unregister the service worker (will be updated on the next page
+                // refresh)
+                const registrations = await navigator.serviceWorker.getRegistrations();
+
+                for (let registration of registrations) {
+                    await registration.unregister();
+                }
+
+                // Update version number in localStorage
+                this._updateLocalVersion(this.latestVersion, this.latestSdkVersion);
+
+                // Ask the user a permission to restart the app now
+                const msg = `The app will be updated on the next restart. The operation requires internet connection and might take some time. Do you want to restart now?`;
+
+                this.ui.confirm(msg, 'koti-cloud-sdk--app-updated-dialog')
+                    .then(res => {
+                        // Refresh the page so that the removed files could
+                        // downloaded & cached anew
+                        location.reload();
+                    })
+                    .catch(res => {
+                        // Do nothing
+                    });
+            })
+            .catch((response) => {
+                // Notify user about a fail
+                this.ui.notify('Some or all of the files failed to update. You can restart the app and try again.', 'error');
+            });
     }
 
     /**
