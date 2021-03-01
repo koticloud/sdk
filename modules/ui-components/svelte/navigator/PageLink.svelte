@@ -3,14 +3,9 @@
 
     export let to;
     export let params = {};
-    export let beforeNavigation = () => true;
 
     function navigate() {
-        const options = {
-            beforeNavigation: beforeNavigation,
-        };
-
-        Navigator.goTo(to, params, options);
+        Navigator.goTo(to, params);
     }
 </script>
 

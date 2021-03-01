@@ -90,7 +90,7 @@ class Navigator
         return Navigator.currentPage;
     }
 
-    static async goTo(page, params = {}, options = {}, withBeforeLeavingCheck = true) {
+    static async goTo(page, params = {}, withBeforeLeavingCheck = true) {
         let name = page;
 
         if (typeof page === 'string') {
@@ -181,7 +181,7 @@ class Navigator
 
         // If the parent page has a saved state from previous navigation then
         // restore that state. Otherwise just open the parent page.
-        this.goTo(page.lastState ? page.lastState : page, {}, {}, withBeforeLeavingCheck);
+        this.goTo(page.lastState ? page.lastState : page, {}, withBeforeLeavingCheck);
     }
 
     static _onBackButton(event) {
