@@ -34,7 +34,10 @@ class Navigator
             }
 
             // The current page's beforeLeaving callback/check
-            canLeave = await this.onBeforeLeaving(Navigator.currentPage);
+            canLeave = await this.onBeforeLeaving(
+                Navigator.currentPage,
+                Navigator.currentPage.parent
+            );
 
             // A global beforeLeaving check
             canLeave = canLeave && (await this.onBeforeLeavingEach(
@@ -120,7 +123,7 @@ class Navigator
             
             if (Navigator.currentPage) {
                 // A beforeLeaving check for the current page
-                canLeave = await this.onBeforeLeaving(Navigator.currentPage);
+                canLeave = await this.onBeforeLeaving(Navigator.currentPage, toPage);
 
                 // A global beforeLeaving check
                 canLeave = canLeave
@@ -264,14 +267,14 @@ class Navigator
         Navigator.currentPage.beforeLeaving = callback;
     }
 
-    static async onBeforeLeaving(page) {
-        const beforeLeaving = page.beforeLeaving;
+    static async onBeforeLeaving(from, to) {
+        const beforeLeaving = from.beforeLeaving;
 
         if (beforeLeaving) {
             if (beforeLeaving.constructor.name === 'AsyncFunction') {
-                return await beforeLeaving(Navigator.currentPage, page);
+                return await beforeLeaving(from, to);
             } else {
-                return beforeLeaving(Navigator.currentPage, page);
+                return beforeLeaving(from, to);
             }
         }
 
