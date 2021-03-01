@@ -63,7 +63,6 @@ class Navigator
         Navigator.pages = this._parsePages(pages);
 
         this.init();
-        Navigator.emit('pages-updated', Navigator.pages);
     }
 
     static _parsePages(pages, parent = null) {
@@ -340,26 +339,26 @@ class Navigator
         return canLeave;
     }
 
-    /**
-     * Events
-     */
-    static emit(event, data) {
-        if (!Navigator._eventSubscriptions[event]) {
-            return;
-        }
+    // /**
+    //  * Events
+    //  */
+    // static emit(event, data) {
+    //     if (!Navigator._eventSubscriptions[event]) {
+    //         return;
+    //     }
 
-        for (let callback of Navigator._eventSubscriptions[event]) {
-            callback(data);
-        }
-    }
+    //     for (let callback of Navigator._eventSubscriptions[event]) {
+    //         callback(data);
+    //     }
+    // }
 
-    static on(event, callback) {
-        if (Navigator._eventSubscriptions[event] === undefined) {
-            Navigator._eventSubscriptions[event] = [];
-        }
+    // static on(event, callback) {
+    //     if (Navigator._eventSubscriptions[event] === undefined) {
+    //         Navigator._eventSubscriptions[event] = [];
+    //     }
 
-        Navigator._eventSubscriptions[event].push(callback);
-    }
+    //     Navigator._eventSubscriptions[event].push(callback);
+    // }
 }
 
 export default Navigator;
