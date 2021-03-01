@@ -4,33 +4,47 @@ export default {
     _eventSubscriptions: {},
 
     emit(event, data) {
-        if (!this._eventSubscriptions[event]) {
+        const group = this.constructor.name;
+
+        if (!this._eventSubscriptions[group] || !this._eventSubscriptions[group][event]) {
             return;
         }
 
-        for (let key in this._eventSubscriptions[event]) {
-            let callback = this._eventSubscriptions[event][key];
+        for (let key in this._eventSubscriptions[group][event]) {
+            let callback = this._eventSubscriptions[group][event][key];
 
             callback(data);
         }
     },
 
     on(event, callback) {
-        if (this._eventSubscriptions[event] === undefined) {
-            this._eventSubscriptions[event] = {};
+        const group = this.constructor.name;
+
+        if (this._eventSubscriptions[group] === undefined) {
+            this._eventSubscriptions[group] = {};
+        }
+
+        if (this._eventSubscriptions[group][event] === undefined) {
+            this._eventSubscriptions[group][event] = {};
         }
 
         const id = `${uuidv4()}-${Date.now()}`;
 
-        this._eventSubscriptions[event][id] = callback;
+        this._eventSubscriptions[group][event][id] = callback;
 
         return id;
     },
 
     off(eventId) {
-        for (let event in this._eventSubscriptions) {
-            if (this._eventSubscriptions[event][eventId]) {
-                delete this._eventSubscriptions[event][eventId];
+        const group = this.constructor.name;
+
+        if (!this._eventSubscriptions[group]) {
+            return;
+        }
+
+        for (let event in this._eventSubscriptions[group]) {
+            if (this._eventSubscriptions[group][event][eventId]) {
+                delete this._eventSubscriptions[group][event][eventId];
             }
         }
     }
