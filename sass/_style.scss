@@ -1,0 +1,25 @@
+/* 
+ * The default Koti Cloud app style. To enable import this file inside your app.
+ */
+:root {
+    --kc-color--bg-main: #f9f9f9;
+    --kc-color--text-main: #363636;
+
+    --kc-color--bg-secondary: #efefef;
+    --kc-color--bg-secondary-hover: #d9d9d9;
+    --kc-color--text-secondary: #666666;
+
+    --kc-color--bg-accent: #1c9cd6;
+    --kc-color--text-accent: #ffffff;
+}
+
+.kc {
+    display: flex;
+    flex-direction: column;
+    background: var(--kc-color--bg-main);
+    color: var(--kc-color--text-main);
+
+    a {
+        color: $infoBlue;
+    }
+}

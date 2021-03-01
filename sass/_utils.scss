@@ -2,4 +2,32 @@
     @include noselect;
 }
 
+.kc--btn-reset {
+    display: inline-block;
+	font-family: inherit;
+	font-size: inherit;
+	border: none;
+	background: none;
+	cursor: pointer;
+	line-height: normal;
+    text-decoration: none;
+    outline: none;
+
+	/* Corrects font smoothing for webkit */
+	-webkit-font-smoothing: inherit;
+	-moz-osx-font-smoothing: inherit;
+
+	/* Corrects inability to style clickable `input` types in iOS */
+    -webkit-appearance: none;
+    
+    &:focus, &:active {
+        outline: none;
+    }
+
+	&::-moz-focus-inner {
+		border: 0;
+		padding: 0;
+	}
+}
+
 .kc--mb-1 { margin-bottom: 1rem; }
