@@ -629,8 +629,10 @@ class DB
 
     /**
      * Sync the DB with Koti Cloud server.
+     * 
+     * @param {bool} fireEvents
      */
-    async sync() {
+    async sync(fireEvents = true) {
         try {
             // Make sure the driver is initialized
             await this._initDriver();
@@ -644,7 +646,9 @@ class DB
                 return;
             }
 
-            this.emit('syncing');
+            if (fireEvents) {
+                this.emit('syncing');
+            }
 
             this._syncing = true;
 
@@ -701,15 +705,19 @@ class DB
 
             this._syncing = false;
 
-            this.emit('synced');
+            if (fireEvents) {
+                this.emit('synced');
+            }
 
             return true;
         } catch (error) {
             // NOTE: Seems like the event is sent too soon and is not being
             // caught in the apps without a timeout (at the "sync on app start")
-            setTimeout(() => {
-                this.emit('sync-failed', error);
-            });
+            if (fireEvents) {
+                setTimeout(() => {
+                    this.emit('sync-failed', error);
+                });
+            }
 
             throw error;
         }

@@ -1,12 +1,11 @@
 import Api from './Api';
 import DB from './DB';
+import Preferences from './Preferences';
 import UI from './UI';
 
 class App {
     constructor() {
         this._initialized = false;
-
-        this.ui = null;
         this._cacheables = {};
 
         // App info
@@ -26,7 +25,9 @@ class App {
         this._userAuthenticated = true;
 
         // Modules
+        this.ui = null;
         this.db = null;
+        this.prefs = null;
     }
 
     /**
@@ -48,6 +49,8 @@ class App {
 
             this._syncDbOnAppStart();
         }
+
+        this.prefs = new Preferences();
 
         this._initialized = true;
 
