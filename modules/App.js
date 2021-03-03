@@ -354,6 +354,15 @@ class App {
      * 
      * @param {string} title 
      */
+    setTitle(title = null) {
+        App.setTitle(title);
+    }
+
+    /**
+     * Set the Panel ("title bar") app title
+     * 
+     * @param {string} title 
+     */
     static setTitle(title = null) {
         const el = document.querySelector('.kc--panel--app-title');
 
@@ -394,7 +403,7 @@ class App {
 
         // Re-set the page title, don't pass the current page title if it is the
         // same as the app name
-        this.setTitle((title != appName) ? title : null);
+        App.setTitle((title != appName) ? title : null);
     }
 }
 
