@@ -1,7 +1,7 @@
 <script>
     export let label = '';
     export let placeholder = '';
-    export let options = {};
+    export let tip = '';
     export let value = null;
 </script>
 
@@ -11,42 +11,58 @@
     color: var(--kc-color--text-secondary);
     padding: .75rem 1.25rem;
     transition: background .15s ease;
-    display: flex;
-    align-items: center;
 
     &:hover {
         background: var(--kc-color--bg-secondary-hover);
     }
 
-    .label {
-        text-align: left;
-        padding-right: 1rem;
+    .input {
+        display: flex;
+        align-items: center;
+        
+        .label {
+            text-align: left;
+            padding-right: 1rem;
+        }
+
+        .value {
+            flex: 1;
+        }
+
+        .value input {
+            width: 100%;
+            font-family: inherit;
+            color: var(--kc-color--text-main);
+            margin: 0;
+            padding: .5rem;
+
+            background: var(--kc-color--bg-main);
+            border: none;
+            border: 1px solid var(--kc-color--bg-secondary);
+
+            &:focus, &:active {
+                border-color: var(--kc-color--bg-accent);
+            }
+        }
     }
 
-    .value {
-        flex: 1;
-    }
+    .messages p {
+        margin-top: .25rem;
+        font-style: italic;
+        font-size: .8rem;
+        text-align: right;
+        color: var(--kc-color--text-secondary);
 
-    .value input {
-        width: 100%;
-        font-family: inherit;
-        color: var(--kc-color--text-main);
-        margin: 0;
-        padding: .5rem;
-
-        background: var(--kc-color--bg-main);
-        border: none;
-        border: 1px solid var(--kc-color--bg-secondary);
-
-        &:focus, &:active {
-            border-color: var(--kc-color--bg-accent);
+        &.error {
+            color: var(--kc-color--danger-red);
         }
     }
 }
 </style>
 
-<slot>
-    <div class="kc-component--input">
+
+<div class="kc-component--input">
+    <div class="input">
         <div class="label">{ label }</div>
         
         <div class="value">
@@ -55,4 +71,12 @@
                 placeholder={placeholder}>
         </div>
     </div>
-</slot>
+
+    <div class="messages">
+        {#if tip}
+            <p class="tip">{ tip }</p>
+        {/if}
+
+        <!-- <p class="error">The field is requried!</p> -->
+    </div>
+</div>

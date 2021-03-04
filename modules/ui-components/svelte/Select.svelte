@@ -2,6 +2,7 @@
     import App from "../../App";
 
     export let label = '';
+    export let tip = '';
     export let options = {};
     export let value = null;
 
@@ -28,7 +29,6 @@
     padding: .75rem 1.25rem;
     transition: background .15s ease;
     cursor: pointer;
-    display: flex;
 
     &:hover {
         background: var(--kc-color--bg-secondary-hover);
@@ -43,24 +43,41 @@
         }
     }
 
-    .label {
-        flex: 1;
-        text-align: left;
-        padding-right: 1rem;
+    .input {
+        display: flex;
+
+        .label {
+            flex: 1;
+            text-align: left;
+            padding-right: 1rem;
+        }
+
+        .value {
+            color: var(--kc-color--text-main);
+        }
+
+        .caret {
+            margin-left: .5rem;
+        }
     }
 
-    .value {
-        color: var(--kc-color--text-main);
-    }
+    .messages p {
+        margin-top: .25rem;
+        font-style: italic;
+        font-size: .8rem;
+        text-align: right;
+        color: var(--kc-color--text-secondary);
 
-    .caret {
-        margin-left: .5rem;
+        &.error {
+            color: var(--kc-color--danger-red);
+        }
     }
 }
 </style>
 
-<slot>
-    <div class="kc-component--select" on:click={showSelect}>
+
+<div class="kc-component--select" on:click={showSelect}>
+    <div class="input">
         <div class="label">{ label }</div>
         
         <div class="value">
@@ -72,4 +89,12 @@
             &#9662;
         </div>
     </div>
-</slot>
+
+    <div class="messages">
+        {#if tip}
+            <p class="tip">{ tip }</p>
+        {/if}
+
+        <!-- <p class="error">The field is requried!</p> -->
+    </div>
+</div>
