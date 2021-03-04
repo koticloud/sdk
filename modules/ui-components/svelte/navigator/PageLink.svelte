@@ -9,6 +9,6 @@
     }
 </script>
 
-<div on:click|preventDefault={() => navigate()}>
+<tamplate on:click|preventDefault={() => navigate()}>
     <slot></slot>
-</div>
+</tamplate>
