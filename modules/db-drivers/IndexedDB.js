@@ -149,7 +149,6 @@ class IndexedDB extends DbDriver
             let request;
 
             if (query.collection) {
-                // request = store.index('collection').openCursor();
                 request = store.index('collection').openCursor(query.collection);
             } else {
                 request = store.openCursor();
@@ -164,7 +163,7 @@ class IndexedDB extends DbDriver
                 let cursor = e.target.result;
 
                 if (cursor) {
-                    // Filter our the results that don't pass all the WHERE
+                    // Filter out the results that don't pass all the WHERE
                     // conditions
                     if (!this._queryWhere(cursor.value, query.wheres)) {
                         cursor.continue();
@@ -190,6 +189,9 @@ class IndexedDB extends DbDriver
                         + from;
 
                     results.docs = results.docs.slice(from, to);
+
+                    // Group the results
+                    results.docs = this._groupResults(results.docs, query.groupBys);
 
                     resolve(results);
                 }
@@ -245,7 +247,7 @@ class IndexedDB extends DbDriver
         }
 
         // TODO: For now all the WHEREs are joined via AND, which is too simple.
-        // Add the ability to add OR and groupped subconditions like in Eloquent
+        // Add the ability to add OR and grouppd subconditions like in Eloquent
         const conditions = [];
 
         for (let where of wheres) {
@@ -303,6 +305,42 @@ class IndexedDB extends DbDriver
 
             return 0;
         }
+    }
+
+    /**
+     * Group results by specified fields
+     * 
+     * @param {array} collection 
+     * @param {array} groupBys 
+     * @param {string} previousGroup 
+     */
+    _groupResults(collection, groupBys = [], previousGroup = null) {
+        if (!groupBys || !groupBys.length) {
+            return collection;
+        }
+
+        const grouped = {};
+        const field = groupBys.shift();
+
+        for (let item of collection) {
+            if (!grouped[item[field]]) {
+                grouped[item[field]] = [];
+            }
+
+            if (groupBys[0]) {
+                const subCollection = collection.filter(i => i[field] === item[field]);
+
+                // If we don't clone the array, it'll be passed by reference
+                grouped[item[field]] = this._groupResults(
+                    subCollection,
+                    groupBys.map(i => i)
+                );
+            } else { 
+                grouped[item[field]].push(item);
+            }
+        }
+
+        return grouped;
     }
 }
 

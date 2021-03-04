@@ -116,6 +116,19 @@ class DB
     }
 
     /**
+     * Add a field to group by to the query.
+     * 
+     * @param {string} field 
+     */
+    groupBy(field) {
+        if (this._query.groupBys.indexOf(field) === -1) {
+            this._query.groupBys.push(field);
+        }
+
+        return this;
+    }
+
+    /**
      * Limit the number of results.
      * 
      * @param {integer} limit 
@@ -212,6 +225,7 @@ class DB
                 },
             ],
             orders: [],
+            groupBys: [],
         };
     }
 
