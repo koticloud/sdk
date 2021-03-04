@@ -1,18 +1,18 @@
 <script>
     import App from "../../App";
 
-    export let text = '';
+    export let label = '';
     export let options = {};
     export let value = null;
 
     function showSelect() {
         const selectOptions = {
-            title: text,
+            title: label,
             selected: value,
             options: options,
         };
 
-        App._instance.ui.select(selectOptions, text)
+        App._instance.ui.select(selectOptions, label)
             .then(_value => {
                 value = _value;
             })
@@ -31,7 +31,7 @@
     display: flex;
 
     &:hover {
-        background: var(--kc-color--bg-secondary-hover); 
+        background: var(--kc-color--bg-secondary-hover);
     }
 
     &:active {
@@ -43,7 +43,7 @@
         }
     }
 
-    .text {
+    .label {
         flex: 1;
         text-align: left;
         padding-right: 1rem;
@@ -61,7 +61,7 @@
 
 <slot>
     <div class="kc-component--select" on:click={showSelect}>
-        <div class="text">{ text }</div>
+        <div class="label">{ label }</div>
         
         <div class="value">
             { value && options[value] ? options[value] : '-' }

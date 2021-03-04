@@ -8,6 +8,7 @@ import SidebarToggleBtn from './modules/ui-components/svelte/sidebar/SidebarTogg
 import Panel from './modules/ui-components/svelte/Panel.svelte';
 import Button from './modules/ui-components/svelte/Button.svelte';
 import Select from './modules/ui-components/svelte/Select.svelte';
+import Input from './modules/ui-components/svelte/Input.svelte';
 
 export {
     // Navigator (router)
@@ -20,4 +21,5 @@ export {
     Panel,
     Button,
     Select,
+    Input,
 };
