@@ -12,10 +12,10 @@
     padding: 1rem;
     background-color: #000000bb;
     z-index: 214748364; /* Max value is 2147483647 */
-    overflow-y: auto;
 
     display: none;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
 
     &--show {
         display: flex;
@@ -25,6 +25,10 @@
 .kc--dialog--wrapper {
     padding: 2rem 0;
     margin: auto;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
 }
 
 .kc--dialog {
@@ -33,6 +37,14 @@
     padding: 1rem;
     margin: auto 0;
     max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &--body {
+        overflow-y: auto;
+        flex: 1;
+    }
 
     &--buttons {
         margin-top: 1rem;
