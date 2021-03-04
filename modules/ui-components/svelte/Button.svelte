@@ -4,6 +4,7 @@
 
 <style lang="scss">
 .kc-component--btn {
+    display: inline-block;
     background: var(--kc-color--bg-secondary);
     color: var(--kc-color--text-secondary);
     padding: .75rem 1.25rem;
