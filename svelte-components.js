@@ -7,8 +7,10 @@ import SidebarToggleBtn from './modules/ui-components/svelte/sidebar/SidebarTogg
 // UI components
 import Panel from './modules/ui-components/svelte/Panel.svelte';
 import Button from './modules/ui-components/svelte/Button.svelte';
-import Select from './modules/ui-components/svelte/Select.svelte';
-import Input from './modules/ui-components/svelte/Input.svelte';
+// Form components
+import Form from './modules/ui-components/svelte/forms/Form.svelte';
+import Select from './modules/ui-components/svelte/forms/Select.svelte';
+import Input from './modules/ui-components/svelte/forms/Input.svelte';
 
 export {
     // Navigator (router)
@@ -20,6 +22,8 @@ export {
     // UI components
     Panel,
     Button,
+    // Form components
+    Form,
     Select,
     Input,
 };
