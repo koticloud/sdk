@@ -12,16 +12,22 @@
     const errors = getContext('errors');
 
     $: {
-        setFormElement(name, {
-            value,
-            rules
-        })
+        if (setFormElement) {
+            setFormElement(name, {
+                value,
+                rules
+            });
+        }
     }
 
-    setFormElement(name, {
-        value,
-        rules
-    });
+    (() => {
+        if (setFormElement) {
+            setFormElement(name, {
+                value,
+                rules
+            });
+        }
+    })();
 </script>
 
 <style lang="scss">
@@ -64,7 +70,7 @@
             <p class="tip">{ tip }</p>
         {/if}
 
-        {#if $errors[name] && $errors[name].length}
+        {#if errors && $errors[name] && $errors[name].length}
             <p class="error">{ $errors[name][0] }</p>
         {/if}
     </div>
