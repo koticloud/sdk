@@ -27,8 +27,11 @@ class Preferences {
      */
     async getAll() {
         const data = await this._db.collection(this._collection).get();
+        const prefs = {};
 
-        return data.docs;
+        data.docs.map(i => prefs[i.key] = i.value);
+
+        return prefs;
     }
 
     /**
