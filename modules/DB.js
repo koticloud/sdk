@@ -391,8 +391,9 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // Original data before changes were made
-        const before = await this.withTrashed().getById(doc._id);
+        // TODO: Temporarily disabled as not using diff/patch anymore
+        // // Original data before changes were made
+        // const before = await this.withTrashed().getById(doc._id);
 
         // Update the document object
         doc._deleted_at = null;
