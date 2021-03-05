@@ -1,9 +1,12 @@
 import Required from './rules/Required.js';
+import IsNumber from './rules/IsNumber.js';
 
 class FormValidator
 {
     static validators = {
         'required': Required,
+        'number': IsNumber,
+        // TODO: Add more validators, see Laravel validation rules for ideas
     };
 
     static getValidator(rule) {
