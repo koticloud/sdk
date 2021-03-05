@@ -8,6 +8,7 @@
     export let value = null;
     export let rules = '';
 
+    let initialValue = null;
     const setFormElement = getContext('setFormElement');
     const errors = getContext('errors');
 
@@ -15,15 +16,19 @@
         if (setFormElement) {
             setFormElement(name, {
                 value,
+                initialValue,
                 rules
             });
         }
     }
 
     (() => {
+        initialValue = value;
+
         if (setFormElement) {
             setFormElement(name, {
                 value,
+                initialValue,
                 rules
             });
         }

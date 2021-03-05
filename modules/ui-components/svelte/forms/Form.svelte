@@ -43,6 +43,18 @@
         return passed;
     }
 
+    export function hasChanges() {
+        for (let name in elements) {
+            const el = elements[name];
+
+            if (el.initialValue !== el.value) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     onDestroy(() => {
         errors = {};
         errorsStore.set({});
