@@ -1,14 +1,18 @@
 class Rule
 {
-    static isValid(value) {
+    constructor(args) {
+        this.args = args;
+    }
+
+    isValid(value) {
         return true;
     }
 
-    static message() {
+    message() {
         return 'Invalid value.';
     }
 
-    static check(value) {
+    check(value) {
         return this.isValid(value) ? true : this.message();
     }
 }

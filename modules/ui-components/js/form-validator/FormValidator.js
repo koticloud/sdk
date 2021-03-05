@@ -1,11 +1,17 @@
 import Required from './rules/Required.js';
 import IsNumber from './rules/IsNumber.js';
+import MinValue from './rules/MinValue.js';
+import Integer from './rules/Integer.js';
+import MaxValue from './rules/MaxValue.js';
 
 class FormValidator
 {
     static validators = {
         'required': Required,
         'number': IsNumber,
+        'min_value': MinValue,
+        'max_value': MaxValue,
+        'integer': Integer,
         // TODO: Add more validators, see Laravel validation rules for ideas
     };
 
@@ -35,7 +41,12 @@ class FormValidator
         rules = rules.split('|');
 
         for (let rule of rules) {
-            let error = this.getValidator(rule).check(value);
+            const ruleParts = rule.split(':');
+            rule = ruleParts[0];
+            const args = ruleParts[1] ? ruleParts[1].split(',') : [];
+
+            const validatorClass = this.getValidator(rule);
+            let error = new validatorClass(args).check(value);
 
             if (error !== true) {
                 errors.push(error);
