@@ -8,11 +8,17 @@
     let errorsStore = writable(errors);
 
     setContext('setFormElement', setFormElement);
+    setContext('removeFormElement', removeFormElement);
     setContext('errors', errorsStore);
 
     function setFormElement(name, el) {
         elements[name] = el;
         errors[name] = [];
+    }
+
+    function removeFormElement(name) {
+        delete elements[name];
+        delete errors[name];
     }
 
     function clearErrors() {

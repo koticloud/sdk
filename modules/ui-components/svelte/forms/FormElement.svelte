@@ -1,5 +1,5 @@
 <script>
-    import { getContext } from 'svelte';
+    import { getContext, onDestroy } from 'svelte';
 
     export let className = '';
 
@@ -10,6 +10,7 @@
 
     let initialValue = null;
     const setFormElement = getContext('setFormElement');
+    const removeFormElement = getContext('removeFormElement');
     const errors = getContext('errors');
 
     $: {
@@ -33,6 +34,12 @@
             });
         }
     })();
+
+    onDestroy(() => {
+        if (removeFormElement) {
+            removeFormElement(name);
+        }
+    });
 </script>
 
 <style lang="scss">
