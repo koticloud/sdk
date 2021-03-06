@@ -159,8 +159,6 @@ class Navigator
         // Save the current page state for back navigation (here we modify the
         // original page object)
         page.lastState = Object.assign({}, Navigator.currentPage);
-        // console.log(page.lastState);
-        // console.log(page.lastState.params);
 
         // If this is not a root level page
         if (page.parent) {
