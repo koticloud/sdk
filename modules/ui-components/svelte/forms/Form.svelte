@@ -1,7 +1,7 @@
 <script>
     import { setContext, onDestroy } from 'svelte';
     import { writable } from 'svelte/store';
-    import FormValidator from '../../js/form-validator/FormValidator.js';
+    import FormValidator from '../../../form-validator/FormValidator.js';
 
     let elements = {};
     let errors = {};
