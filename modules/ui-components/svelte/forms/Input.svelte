@@ -27,7 +27,6 @@
     padding: .5rem;
 
     background: var(--kc-color--bg-main);
-    border: none;
     border: 1px solid var(--kc-color--bg-secondary);
 
     &:focus, &:active {
