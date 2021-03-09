@@ -287,6 +287,10 @@ class DB
      * @param {object} options
      */
     async update(doc, options = {}) {
+        if (typeof doc !== 'object' || Array.isArray(doc)) {
+            throw 'DB: invalid document object.';
+        }
+
         // Make sure the driver is initialized
         await this._initDriver();
 
@@ -321,6 +325,10 @@ class DB
      * @param {object} options
      */
     async updateOrCreate(doc, options = {}) {
+        if (typeof doc !== 'object' || Array.isArray(doc)) {
+            throw 'DB: invalid document object.';
+        }
+
         // Make sure the driver is initialized
         await this._initDriver();
 
