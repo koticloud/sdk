@@ -3,6 +3,8 @@
     import { writable } from 'svelte/store';
     import FormValidator from '../../../form-validator/FormValidator.js';
 
+    export let extraValidation = null;
+
     let elements = {};
     let errors = {};
     let errorsStore = writable(errors);
@@ -38,9 +40,20 @@
             const el = elements[name];
 
             errors[name] = await FormValidator.validate(el.value, el.rules);
+        }
 
-            if (errors[name].length) {
+        // Optional extra validation
+        if (typeof extraValidation === 'function') {
+            let extraErrors = await extraValidation(elements);
+
+            errors = Object.assign(errors, extraErrors);
+        }
+
+        for (let name in errors) {
+            if (errors[name].length > 0) {
                 passed = false;
+
+                break;
             }
         }
 
