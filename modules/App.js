@@ -255,7 +255,6 @@ class App {
                     // proceed to the next step
                     if (clearCachePromises.length === keyList.length * this._cacheables.untilUpdate.length) {
                         this._doUpdate(clearCachePromises);
-                        console.log('Cache can be cleared..');
                     }
                 });
             });
@@ -272,7 +271,6 @@ class App {
         // After all the required files were deleted from cache
         Promise.all(clearCachePromises)
             .then(async (values) => {
-                console.log('Cache cleared!');
                 // Unregister the service worker (will be updated on the next page
                 // refresh)
                 const registrations = await navigator.serviceWorker.getRegistrations();
@@ -341,6 +339,10 @@ class App {
         return (this.info && this.info.name)
             ? this.info.name
             : null;
+    }
+
+    static get() {
+        return App._instance;
     }
 
     static appName() {

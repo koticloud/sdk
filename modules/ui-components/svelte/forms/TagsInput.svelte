@@ -14,8 +14,6 @@
 
     function onTagsUpdated(event) {
         value = event.detail.tags;
-        
-        console.log(value);
     }
 </script>
 

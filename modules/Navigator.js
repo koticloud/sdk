@@ -29,7 +29,7 @@ class Navigator
 
             // Global beforeLeaving checks
             // Prevent going back if any dialogs are open
-            if (App._instance && App._instance.ui.hasOpenDialogs()) {
+            if (App.get() && App.get().ui.hasOpenDialogs()) {
                 canLeave = false;
             }
 
@@ -106,7 +106,7 @@ class Navigator
         }
 
         // Don't navigate when there are any dialogs open
-        if (App._instance && App._instance.ui.hasOpenDialogs()) {
+        if (App.get() && App.get().ui.hasOpenDialogs()) {
             return false;
         }
 
@@ -198,8 +198,8 @@ class Navigator
             if (!Navigator._closeAppOnBackNavigation) {
                 Navigator._closeAppOnBackNavigation = true;
 
-                if (App._instance) {
-                    App._instance.ui.notify('Press back button again to close the app');
+                if (App.get()) {
+                    App.get().ui.notify('Press back button again to close the app');
                 }
             }
 

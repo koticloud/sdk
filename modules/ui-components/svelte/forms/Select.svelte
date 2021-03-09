@@ -18,7 +18,7 @@
             options: options,
         };
 
-        App._instance.ui.select(selectOptions, label)
+        App.get().ui.select(selectOptions, label)
             .then(_value => {
                 value = _value;
             })
