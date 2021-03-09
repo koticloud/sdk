@@ -11,6 +11,7 @@ import Button from './modules/ui-components/svelte/Button.svelte';
 import Form from './modules/ui-components/svelte/forms/Form.svelte';
 import Select from './modules/ui-components/svelte/forms/Select.svelte';
 import Input from './modules/ui-components/svelte/forms/Input.svelte';
+import Datepicker from './modules/ui-components/svelte/forms/Datepicker.svelte';
 
 export {
     // Navigator (router)
@@ -26,4 +27,5 @@ export {
     Form,
     Select,
     Input,
+    Datepicker,
 };
