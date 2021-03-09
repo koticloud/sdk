@@ -204,7 +204,7 @@ class Dialog extends Component
                     } else {
                         resolve(res);
                     }
-                }, { once: true });
+                });
             }
 
             // Extras
