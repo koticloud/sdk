@@ -29,7 +29,7 @@
         errorsStore.set(errors);
     }
 
-    export function validate() {
+    export async function validate() {
         clearErrors();
 
         let passed = true;
@@ -37,7 +37,7 @@
         for (let name in elements) {
             const el = elements[name];
 
-            errors[name] = FormValidator.validate(el.value, el.rules);
+            errors[name] = await FormValidator.validate(el.value, el.rules);
 
             if (errors[name].length) {
                 passed = false;

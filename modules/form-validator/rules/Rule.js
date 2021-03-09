@@ -12,8 +12,10 @@ class Rule
         return 'Invalid value.';
     }
 
-    check(value) {
-        return this.isValid(value) ? true : this.message();
+    async check(value) {
+        const isValid = await this.isValid(value);
+
+        return isValid ? true : this.message();
     }
 }
 

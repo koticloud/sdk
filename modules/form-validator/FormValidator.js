@@ -3,6 +3,7 @@ import IsNumber from './rules/IsNumber.js';
 import MinValue from './rules/MinValue.js';
 import Integer from './rules/Integer.js';
 import MaxValue from './rules/MaxValue.js';
+import Unique from './rules/Unique.js';
 
 class FormValidator
 {
@@ -12,6 +13,7 @@ class FormValidator
         'min_value': MinValue,
         'max_value': MaxValue,
         'integer': Integer,
+        'unique': Unique,
         // TODO: Add more validators, see Laravel validation rules for ideas
     };
 
@@ -31,7 +33,7 @@ class FormValidator
      * @param {string} rules 
      * @return {array}
      */
-    static validate(value, rules) {
+    static async validate(value, rules) {
         let errors = [];
 
         if (!rules || !rules.length) {
@@ -46,7 +48,7 @@ class FormValidator
             const args = ruleParts[1] ? ruleParts[1].split(',') : [];
 
             const validatorClass = this.getValidator(rule);
-            let error = new validatorClass(args).check(value);
+            let error = await new validatorClass(args).check(value);
 
             if (error !== true) {
                 errors.push(error);
