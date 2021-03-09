@@ -6,13 +6,14 @@
     export let label = '';
     export let placeholder = '';
     export let tip = '';
-    export let value = null;
+    export let value = new Date();
     export let rules = '';
 
-    export let selected = new Date();
     export let minDate = new Date(0);   // Earliest date possible
     export let maxDate = new Date();
     export let format = '#{F} #{d}, #{Y}';
+
+    let formattedSelected = '';
 </script>
 
 <style lang="scss">
@@ -33,8 +34,8 @@
     
     <div class="value">
         <!-- NOTE: There's a '<Popover> received an unexpected slot "default"' warning. This is a known bug in this component and doesn't look like it's going to be fixed anytime soon. -->
-        <Datepicker bind:selected={selected}
-            bind:formattedSelected={value}
+        <Datepicker bind:selected={value}
+            bind:formattedSelected={formattedSelected}
             start={minDate}
             end={maxDate}
             style="width: 100%; text-align: right;"
@@ -43,7 +44,7 @@
             dayHighlightedBackgroundColor='#0091ff'
             dayHighlightedTextColor='#fff'
         >
-            {value ? value : '-'}
+            {formattedSelected ? formattedSelected : '-'}
         </Datepicker>
     </div>
 </FormElement>
