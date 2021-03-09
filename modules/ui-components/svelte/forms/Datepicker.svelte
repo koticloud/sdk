@@ -13,6 +13,7 @@
     export let maxDate = new Date();
     export let format = '#{F} #{d}, #{Y}';
 
+    let className = 'kc-component--datepicker';
     let formattedSelected = '';
 </script>
 
@@ -27,9 +28,29 @@
     cursor: pointer;
     color: var(--kc-color--text-main);
 }
+
+:global(.kc-component--datepicker) {
+    &:active {
+        background: var(--kc-color--bg-accent) !important;
+        color: var(--kc-color--text-accent) !important;
+
+        .value, :global(.tip) {
+            color: var(--kc-color--text-accent) !important;
+        }
+    }
+
+    .value {
+        color: var(--kc-color--text-main);
+    }
+}
 </style>
 
-<FormElement name={name} tip={tip} rules={rules} bind:value={value}>
+<FormElement name={name}
+    tip={tip}
+    rules={rules}
+    bind:value={value}
+    className={className}
+>
     <div class="label">{ label }</div>
     
     <div class="value">
