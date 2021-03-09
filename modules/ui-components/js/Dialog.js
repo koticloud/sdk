@@ -162,7 +162,7 @@ class Dialog extends Component
             const onOverlayClosed = this._ui.on('overlay-closed', () => {
                 this._ui.off(onOverlayClosed);
 
-                this._openDialogsCount--;
+                this._openDialogsCount = 0;
 
                 reject();
             });
@@ -337,7 +337,7 @@ class Dialog extends Component
      * @param {string} id 
      */
     close(id) {
-        this._overlay.removeChild(`.kc--dialog[data-id="${id}"]`);
+        this._overlay.removeChild(`.kc--dialog--wrapper[data-id="${id}"]`);
         
         this._openDialogsCount--;
 
