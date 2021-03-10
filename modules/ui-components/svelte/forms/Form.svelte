@@ -31,6 +31,14 @@
         errorsStore.set(errors);
     }
 
+    function addError(field, error) {
+        if (!errors[field]) {
+            errors[field] = [];
+        }
+
+        errors[field].push(error);
+    }
+
     export async function validate() {
         clearErrors();
 
@@ -44,9 +52,7 @@
 
         // Optional extra validation
         if (typeof extraValidation === 'function') {
-            let extraErrors = await extraValidation(elements);
-
-            errors = Object.assign(errors, extraErrors);
+            await extraValidation(elements, addError);
         }
 
         for (let name in errors) {
