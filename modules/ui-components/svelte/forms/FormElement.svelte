@@ -15,21 +15,19 @@
     const errors = getContext('errors');
 
     $: {
-        if (setFormElement && !disabled) {
+        if (setFormElement) {
             setFormElement(name, {
                 value,
                 initialValue,
                 rules
             });
-        } else if (removeFormElement) {
-            removeFormElement(name);
         }
     }
 
     (() => {
         initialValue = value;
 
-        if (setFormElement && !disabled) {
+        if (setFormElement) {
             setFormElement(name, {
                 value,
                 initialValue,
