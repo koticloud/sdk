@@ -1,5 +1,6 @@
 <script>
     export let text = '';
+    export let disabled = false;
 </script>
 
 <style lang="scss">
@@ -20,11 +21,19 @@
         background: var(--kc-color--bg-accent);
         color: var(--kc-color--text-accent);
     }
+
+    &.disabled {
+        pointer-events: none;
+        color: var(--kc-color--text-pale);
+    }
 }
 </style>
 
 <slot>
-    <button class="kc-component--btn kc--btn-reset" on:click>
+    <button class="kc-component--btn kc--btn-reset"
+        class:disabled={disabled}
+        on:click
+    >
         { text }
     </button>
 </slot>

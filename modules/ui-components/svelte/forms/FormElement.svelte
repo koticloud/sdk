@@ -7,6 +7,7 @@
     export let tip = '';
     export let value = null;
     export let rules = '';
+    export let disabled = false;
 
     let initialValue = null;
     const setFormElement = getContext('setFormElement');
@@ -14,19 +15,21 @@
     const errors = getContext('errors');
 
     $: {
-        if (setFormElement) {
+        if (setFormElement && !disabled) {
             setFormElement(name, {
                 value,
                 initialValue,
                 rules
             });
+        } else if (removeFormElement) {
+            removeFormElement(name);
         }
     }
 
     (() => {
         initialValue = value;
 
-        if (setFormElement) {
+        if (setFormElement && !disabled) {
             setFormElement(name, {
                 value,
                 initialValue,
@@ -51,6 +54,11 @@
 
     &:hover {
         background: var(--kc-color--bg-secondary-hover);
+    }
+
+    &.disabled {
+        pointer-events: none;
+        color: var(--kc-color--text-pale);
     }
 
     .input {

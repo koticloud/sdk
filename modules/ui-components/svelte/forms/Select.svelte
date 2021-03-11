@@ -8,10 +8,15 @@
     export let options = {};
     export let value = null;
     export let rules = '';
+    export let disabled = false;
     
     let className = 'kc-component--select';
 
     function showSelect() {
+        if (disabled) {
+            return;
+        }
+
         const selectOptions = {
             title: label,
             selected: value,
@@ -53,14 +58,25 @@
     .caret {
         margin-left: .5rem;
     }
+
+    &.disabled {
+        .label, .value {
+            color: var(--kc-color--text-pale);
+        }
+
+        .caret {
+            display: none;
+        }
+    }
 }
 </style>
 
 <FormElement name={name}
     tip={tip}
     rules={rules}
+    disabled={disabled}
     bind:value={value}
-    className={className}
+    className={className + (disabled ? ' disabled' : '')}
     on:click={showSelect}
 >
     <div class="label">{ label }</div>

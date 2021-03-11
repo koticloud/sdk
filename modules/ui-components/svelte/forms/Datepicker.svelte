@@ -8,6 +8,7 @@
     export let tip = '';
     export let value = new Date();
     export let rules = '';
+    export let disabled = false;
 
     export let minDate = new Date(0);   // Earliest date possible
     export let maxDate = new Date();
@@ -42,19 +43,25 @@
     .value {
         color: var(--kc-color--text-main);
     }
+
+    &.disabled {
+        .value {
+            color: var(--kc-color--text-pale);
+        }
+    }
 }
 </style>
 
 <FormElement name={name}
     tip={tip}
     rules={rules}
+    disabled={disabled}
     bind:value={value}
-    className={className}
+    className={className + (disabled ? ' disabled' : '')}
 >
     <div class="label">{ label }</div>
     
     <div class="value">
-        <!-- NOTE: There's a '<Popover> received an unexpected slot "default"' warning. This is a known bug in this component and doesn't look like it's going to be fixed anytime soon. -->
         <Datepicker bind:selected={value}
             bind:formattedSelected={formattedSelected}
             start={minDate}

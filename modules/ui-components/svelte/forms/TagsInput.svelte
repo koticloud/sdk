@@ -8,9 +8,12 @@
     export let tip = '';
     export let value = null;
     export let rules = '';
+    export let disabled = false;
 
     export let autoComplete = [];
     export let onlyUnique = true;
+
+    let className = 'kc-component--tags-input';
 
     function onTagsUpdated(event) {
         value = event.detail.tags;
@@ -60,7 +63,13 @@
 }
 </style>
 
-<FormElement name={name} tip={tip} rules={rules} bind:value={value}>
+<FormElement name={name}
+    tip={tip}
+    rules={rules}
+    disabled={disabled}
+    bind:value={value}
+    className={className + (disabled ? ' disabled' : '')}
+>
     <div class="label">{ label }</div>
     
     <div class="value">
