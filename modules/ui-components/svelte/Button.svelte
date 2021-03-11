@@ -1,6 +1,7 @@
 <script>
     export let text = '';
     export let disabled = false;
+    export let useAccentColors = false;
 </script>
 
 <style lang="scss">
@@ -26,11 +27,26 @@
         pointer-events: none;
         color: var(--kc-color--text-pale);
     }
+
+    &.accent {
+        background: var(--kc-color--bg-accent);
+        color: var(--kc-color--text-accent);
+
+        &:hover {
+            color: var(--kc-color--text-accent-pale);
+        }
+
+        &:active {
+            background: var(--kc-color--bg-secondary);
+            color: var(--kc-color--text-secondary);
+        }
+    }
 }
 </style>
 
 <slot>
     <button class="kc-component--btn kc--btn-reset"
+        class:accent={useAccentColors}
         class:disabled={disabled}
         on:click
     >

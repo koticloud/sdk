@@ -18,7 +18,7 @@ $bigScreenWidth: 1150px;
     text-align: center;
 
     svg {
-        fill: var(--kc-color--text-pale);
+        fill: var(--kc-color--text-accent-pale);
         width: 50%;
         height: 50%;
         margin-top: 25%;

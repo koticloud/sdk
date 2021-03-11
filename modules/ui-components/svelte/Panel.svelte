@@ -4,8 +4,8 @@
 
 <style lang="scss">
 .kc-component--panel.kc-component--default-style {
-    background: var(--kc-color--bg-secondary);
-    color: var(--kc-color--text-main);
+    background: var(--kc-color--bg-accent);
+    color: var(--kc-color--text-accent);
     min-height: 2.5rem;
 
     display: grid;
