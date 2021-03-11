@@ -208,6 +208,47 @@ class IndexedDB extends DbDriver
     }
 
     /**
+     * Get the list of all the existing collections.
+     * 
+     * @return {Array}
+     */
+    async getCollections() {
+        return new Promise((resolve, reject) => {
+            const store = this._getStore();
+            let request;
+
+            request = store.index('collection').openCursor(null, 'nextunique');
+
+            let results = [];
+
+            request.onsuccess = (e) => {
+                let cursor = e.target.result;
+
+                if (cursor) {
+                    // Filter out the results that don't pass all the WHERE
+                    // conditions
+                    results.push(cursor.value._collection);
+
+                    cursor.continue();
+                } else {    // No more items
+                    // Sort the final results
+                    results = results.sort();
+
+                    resolve(results);
+                }
+            }
+
+            request.onerror = function (e) {
+                if (e.type === 'success') {
+                    resolve(results);
+                } else {
+                    reject(e.target.error);
+                }
+            };
+        });
+    }
+
+    /**
      * Delete a record by id.
      * 
      * @param {string} id

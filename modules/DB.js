@@ -226,6 +226,7 @@ class DB
             ],
             orders: [],
             groupBys: [],
+            distinct: null,
         };
     }
 
@@ -990,6 +991,18 @@ class DB
         this.emit('synced');
 
         return true;
+    }
+
+    /**
+     * Get the list of all the existing collections.
+     * 
+     * @return {Array}
+     */
+    async getCollections() {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        return await this._driver.getCollections();
     }
 
     /**
