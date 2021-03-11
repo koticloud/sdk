@@ -75,6 +75,7 @@
     <div class="value">
         <Tags on:tags={onTagsUpdated}
             autoComplete={autoComplete}
-            onlyUnique={onlyUnique} />
+            onlyUnique={onlyUnique}
+            tags={value} />
     </div>
 </FormElement>
