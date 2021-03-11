@@ -2,6 +2,7 @@
     export let text = '';
     export let disabled = false;
     export let useAccentColors = false;
+    export let small = false;
 </script>
 
 <style lang="scss">
@@ -41,12 +42,18 @@
             color: var(--kc-color--text-secondary);
         }
     }
+
+    &.small {
+        padding: .5rem 1rem;
+        font-size: .9rem;
+    }
 }
 </style>
 
 <slot>
     <button class="kc-component--btn kc--btn-reset"
         class:accent={useAccentColors}
+        class:small={small}
         class:disabled={disabled}
         on:click
     >
