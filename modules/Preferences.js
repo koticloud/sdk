@@ -83,6 +83,19 @@ class Preferences {
 
         return true;
     }
+
+    /**
+     * Sync the preferences
+     * 
+     * @param {string} prefs
+     */
+    async sync() {
+        try {
+            this._db.sync(false);
+
+            this.emit('synced');
+        } catch (e) { }
+    }
 }
 
 /**
