@@ -57,6 +57,10 @@
     &.disabled {
         pointer-events: none;
         color: var(--kc-color--text-pale);
+
+        .messages p {
+            color: var(--kc-color--text-pale);
+        }
     }
 
     .input {
