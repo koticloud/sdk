@@ -418,6 +418,27 @@ class DB
     }
 
     /**
+     * Move a document to another collection.
+     * 
+     * @param {object} doc 
+     * @param {string} collection 
+     */
+    async move(doc, collection) {
+        // Make sure the driver is initialized
+        await this._initDriver();
+
+        if (doc._collection !== collection) {
+            // Update the document object
+            doc._collection = collection;
+
+            // Call the driver method
+            doc = await this._driver.update(doc);
+        }
+        
+        return doc;
+    }
+
+    /**
      * Return query results.
      */
     async get() {
