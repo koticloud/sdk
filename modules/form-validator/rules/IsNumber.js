@@ -7,9 +7,14 @@ class IsNumber extends Rule
             return true;
         }
 
+        const parts = value.split('.');
+        const precision = parts.length > 1
+            ? parts[1].length
+            : 0;
+        
         const n = Number(value);
 
-        return n !== Infinity && String(n) === value;
+        return n !== Infinity && n.toFixed(precision) === value;
     }
 
     message() {
