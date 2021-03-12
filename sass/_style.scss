@@ -27,6 +27,14 @@
     --kc-color--success-green: #99d418;
 }
 
+// Remove Chrome mobile highlight on tap
+*:focus, *:active {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    -ms-touch-action: manipulation;
+    touch-action: manipulation;
+}
+
 .kc {
     display: flex;
     flex-direction: column;
