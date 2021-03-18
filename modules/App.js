@@ -52,6 +52,17 @@ class App {
 
         this.prefs = new Preferences();
 
+        // Sync DB & Prefs when user went online after being offline
+        if (options.syncOnOnline !== false) {
+            window.addEventListener('online', (e) => {
+                if (this.db) {
+                    this.db.sync();
+                }
+
+                this.prefs.sync();
+            });
+        }
+
         this._initialized = true;
 
         // Make the current instance accessible statically
