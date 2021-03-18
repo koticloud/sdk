@@ -3,6 +3,10 @@ import Rule from './Rule.js';
 class IsNumber extends Rule
 {
     isValid(value) {
+        if (value === null || value === undefined) {
+            return false;
+        }
+
         if (typeof value === 'number') {
             return true;
         }
@@ -11,7 +15,7 @@ class IsNumber extends Rule
         const precision = parts.length > 1
             ? parts[1].length
             : 0;
-        
+
         const n = Number(value);
 
         return n !== Infinity && n.toFixed(precision) === value;
