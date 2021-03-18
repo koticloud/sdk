@@ -82,7 +82,7 @@
     <div class="label">{ label }</div>
     
     <div class="value">
-        { value && options[value] ? options[value] : '-' }
+        { value !== undefined && value !== null && options.hasOwnProperty(value) ? options[value] : '-' }
     </div>
 
     <div class="caret">
