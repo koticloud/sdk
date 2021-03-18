@@ -64,6 +64,7 @@
     <div class="value">
         <input type="text"
             bind:value={value}
+            on:input
             placeholder={placeholder}
             disabled={disabled}>
     </div>
