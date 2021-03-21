@@ -1,6 +1,6 @@
 <script>
     import FormElement from './FormElement.svelte';
-    import Datepicker from 'svelte-calendar';
+    import Datepicker from '../../vendor/svelte-calendar/Datepicker.svelte';
 
     export let name = '';
     export let label = '';
