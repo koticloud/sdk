@@ -60,7 +60,7 @@
     className={className + (disabled ? ' disabled' : '')}
 >
     <div class="label">{ label }</div>
-    
+
     <div class="value">
         <Datepicker bind:selected={value}
             bind:formattedSelected={formattedSelected}
@@ -71,6 +71,7 @@
             highlightColor='#0091ff'
             dayHighlightedBackgroundColor='#0091ff'
             dayHighlightedTextColor='#fff'
+            on:dateSelected
         >
             {formattedSelected ? formattedSelected : '-'}
         </Datepicker>

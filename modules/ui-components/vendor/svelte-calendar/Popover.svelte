@@ -2,6 +2,10 @@
     import { onMount, createEventDispatcher, tick } from "svelte";
     const dispatch = createEventDispatcher();
     let once = (el, evt, cb) => {
+        if (!el) {
+            return;
+        }
+
         function handler() {
             cb.apply(this, arguments);
             el.removeEventListener(evt, handler);
