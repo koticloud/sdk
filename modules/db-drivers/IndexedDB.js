@@ -297,10 +297,14 @@ class IndexedDB extends DbDriver
             let whereValue = where.value;
 
             if (typeof value === 'string') {
+                // Escape single quotes as this will go to eval()
+                value = value.replace(/'/g, "\\'");
                 value = `'${value}'`;
             }
 
             if (typeof whereValue === 'string') {
+                // Escape single quotes as this will go to eval()
+                whereValue = whereValue.replace(/'/g, "\\'");
                 whereValue = `'${whereValue}'`;
             }
 
