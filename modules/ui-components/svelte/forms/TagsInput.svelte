@@ -10,7 +10,7 @@
     export let rules = '';
     export let disabled = false;
 
-    export let autoComplete = [];
+    export let autocomplete = [];
     export let onlyUnique = true;
 
     let className = 'kc-component--tags-input';
@@ -74,7 +74,7 @@
     
     <div class="value">
         <Tags on:tags={onTagsUpdated}
-            autoComplete={autoComplete}
+            autoComplete={autocomplete}
             onlyUnique={onlyUnique}
             tags={value} />
     </div>

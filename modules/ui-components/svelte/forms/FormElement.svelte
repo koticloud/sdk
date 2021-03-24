@@ -49,6 +49,7 @@
     color: var(--kc-color--text-secondary);
     transition: background .15s ease;
     padding: .75rem 1.25rem;
+    position: relative;
 
     &:hover {
         background: var(--kc-color--bg-secondary-hover);
