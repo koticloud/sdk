@@ -56,6 +56,10 @@
     background: var(--kc-color--bg-accent) !important;
 }
 
+:global(.svelte-tags-input-matchs-parent) {
+    z-index: 2;
+}
+
 :global(.svelte-tags-input-matchs li:hover, .svelte-tags-input-matchs li:focus) {
     font-family: inherit !important;
     background: var(--kc-color--bg-accent) !important;
