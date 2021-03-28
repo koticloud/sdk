@@ -8,7 +8,7 @@ import Api from './Api';
 
 class DB
 {
-    constructor(name, driver = 'indexedDb', collection = null) {
+    constructor(name, driver = 'indexedDb', collection = null, cache = {}) {
         // The database
         this._dbName = name;
         this._driverName = driver;
@@ -23,7 +23,10 @@ class DB
         };
         this._resetQuery();
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        // Current query cache
+        this._cache = cache ? cache : {};
+
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // this._revActions = {
         //     create: 'create',
         //     edit: 'edit',
@@ -64,7 +67,7 @@ class DB
      */
     collection(name) {
         // Return a new DB object so that all queries are totally isolated
-        return new DB(this._dbName, this._driverName, name);
+        return new DB(this._dbName, this._driverName, name, this._cache);
     }
 
     /**
@@ -238,6 +241,85 @@ class DB
     }
 
     /**
+     * Cache query results
+     * 
+     * @param {String} type 
+     * @param {object} data 
+     */
+    _cacheResults(type, options) {
+        if (!this._cache[type]) {
+            this._cache[type] = {};
+        }
+
+        if (type === 'single') {
+            this._cache[type][options.id] = Object.assign({}, options.data);
+        } else if (type === 'multiple' || type === 'first') {
+            if (options.query.collection) {
+                const key = sha256(JSON.stringify(options.query));
+    
+                this._cache[type][key] = Object.assign({}, options.data);
+            }
+        }
+    }
+
+    /**
+     * Get cached query results
+     * 
+     * @param {String} type 
+     * @param {object} options 
+     */
+    _getCached(type, options) {
+        if (!this._cache[type]) {
+            return null;
+        }
+
+        let key;
+
+        if (type === 'single') {
+            key = options.id;
+        } else if (type === 'multiple' || type === 'first') {
+            if (options.query.collection) {
+                key = sha256(JSON.stringify(options.query));
+            }
+        }
+
+        return key && this._cache[type][key]
+            ? Object.assign({}, this._cache[type][key])
+            : null;
+    }
+
+    /**
+     * Invalidate a single cache item
+     * 
+     * @param {String} type
+     * @param {object} options
+     */
+    _invalidateCache(type, options) {
+        let key;
+
+        if (type === 'single') {
+            key = options.id;
+        } else if (type === 'multiple' || type === 'first') {
+            key = sha256(JSON.stringify(options.query));
+        }
+
+        if (key && this._cache[type][key]) {
+            delete this._cache[type][key];
+        }
+    }
+
+    /**
+     * Invalidate certain cache types
+     * 
+     * @param {Array} types 
+     */
+    _invalidateCacheTypes(types) {
+        for (let type of types) {
+            delete this._cache[type];
+        }
+    }
+
+    /**
      * Create a new document. Throws an exception if the id inside the data
      * object is not unique.
      * 
@@ -256,10 +338,13 @@ class DB
             _deleted_at: null,
             _purged: 0,
             _synced: false,
-            // _revs: [], // TODO: Temporarily disabled as not using diff/patch anymore
+            // _revs: [], // NOTE: Temporarily disabled as not using diff/patch anymore
         });
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        this._cacheResults('single', { id: data._id, data });
+        this._invalidateCacheTypes(['multiple', 'first']);
+
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // data._revs.push(this._makeRevision(this._revActions.create, {}, data));
 
@@ -276,6 +361,9 @@ class DB
     async store(data) {
         // Make sure the driver is initialized
         await this._initDriver();
+
+        this._cacheResults('single', { id: data._id, data });
+        this._invalidateCacheTypes(['multiple', 'first']);
 
         // Call the driver method
         return await this._driver.create(data);
@@ -295,7 +383,7 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Original data before changes were made
         // const before = await this.withTrashed().getById(doc._id);
 
@@ -309,7 +397,10 @@ class DB
             doc._updated_at = this._now();
         }
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        this._cacheResults('single', { id: doc._id, data: doc });
+        this._invalidateCacheTypes(['multiple', 'first']);
+
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // if (makeRevision) {
         //     doc._revs.push(this._makeRevision(this._revActions.edit, before, doc));
@@ -347,7 +438,7 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Original data before changes were made
         // const before = await this.getById(doc._id);
 
@@ -356,7 +447,10 @@ class DB
         doc._updated_at = this._now();
         doc._synced = false;
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        this._cacheResults('single', { id: doc._id, data: doc });
+        this._invalidateCacheTypes(['multiple', 'first']);
+
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // doc._revs.push(this._makeRevision(this._revActions.trash, before, doc));
 
@@ -373,7 +467,7 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Original data before changes were made
         // const before = await this.withTrashed().getById(doc._id);
 
@@ -383,7 +477,10 @@ class DB
         doc._purged = 1;
         doc._synced = false;
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        this._cacheResults('single', { id: doc._id, data: doc });
+        this._invalidateCacheTypes(['multiple', 'first']);
+
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // doc._revs.push(this._makeRevision(this._revActions.delete, before, doc));
 
@@ -400,7 +497,7 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Original data before changes were made
         // const before = await this.withTrashed().getById(doc._id);
 
@@ -409,7 +506,10 @@ class DB
         doc._updated_at = this._now();
         doc._synced = false;
 
-        // TODO: Temporarily disabled as not using diff/patch anymore
+        this._cacheResults('single', { id: doc._id, data: doc });
+        this._invalidateCacheTypes(['multiple', 'first']);
+
+        // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // doc._revs.push(this._makeRevision(this._revActions.restore, before, doc));
 
@@ -434,7 +534,10 @@ class DB
             // Call the driver method
             doc = await this._driver.update(doc);
         }
-        
+
+        this._cacheResults('single', { id: doc._id, data: doc });
+        this._invalidateCacheTypes(['multiple', 'first']);
+
         return doc;
     }
 
@@ -442,11 +545,25 @@ class DB
      * Return query results.
      */
     async get() {
+        // Return cached results if any
+        let results = this._getCached('multiple', {
+            query: this._query
+        });
+
+        if (results !== null && typeof results === 'object') {
+            return results;
+        }
+
         // Make sure the driver is initialized
         await this._initDriver();
 
         // Call the driver method
-        const results = await this._driver.get(this._query);
+        results = await this._driver.get(this._query);
+
+        this._cacheResults('multiple', {
+            query: this._query,
+            data: results
+        });
 
         // Reset the query
         this._resetQuery();
@@ -458,16 +575,31 @@ class DB
      * Return the first query result.
      */
     async first() {
+        // Return cached results if any
+        let results = this._getCached('first', {
+            query: this._query
+        });
+
+        if (results) {
+            return results;
+        }
+
         // Make sure the driver is initialized
         await this._initDriver();
 
         // Call the driver method
-        const results = await this._driver.get(this._query);
+        results = await this._driver.get(this._query);
+        const doc = results.docs.length ? results.docs[0] : null;
+
+        this._cacheResults('first', {
+            query: this._query,
+            data: doc
+        });
 
         // Reset the query
         this._resetQuery();
 
-        return results.docs.length ? results.docs[0] : null;
+        return doc;
     }
 
     /**
@@ -495,11 +627,20 @@ class DB
      * @param {string} id 
      */
     async getById(id) {
+        // Return cached results if any
+        let doc = this._getCached('single', { id });
+
+        if (doc) {
+            return doc;
+        }
+
         // Make sure the driver is initialized
         await this._initDriver();
 
         // Call the driver method
-        const doc = await this._driver.getById(id, this._query);
+        doc = await this._driver.getById(id, this._query);
+
+        this._cacheResults('single', { id, data: doc });
 
         if (!doc) {
             return null;
@@ -522,6 +663,9 @@ class DB
 
         // Call the driver method
         await this._driver.deleteById(id);
+
+        this._invalidateCache('single', { id });
+        this._invalidateCacheTypes(['multiple', 'first']);
 
         return true;
     }
@@ -833,7 +977,7 @@ class DB
         return true;
     }
 
-    // TODO: The original diff/patch sync code, diff/patch is temporarily
+    // NOTE: The original diff/patch sync code, diff/patch is temporarily
     // disabled
     // /**
     //  * Sync the DB with Koti Cloud server.

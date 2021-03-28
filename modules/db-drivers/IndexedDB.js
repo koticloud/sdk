@@ -191,7 +191,10 @@ class IndexedDB extends DbDriver
                     results.docs = results.docs.slice(from, to);
 
                     // Group the results
-                    results.docs = this._groupResults(results.docs, query.groupBys);
+                    results.docs = this._groupResults(
+                        results.docs,
+                        query.groupBys.map(i => i)
+                    );
 
                     resolve(results);
                 }
