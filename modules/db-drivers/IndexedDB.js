@@ -2,10 +2,76 @@ import DbDriver from "./DbDriver";
 
 class IndexedDB extends DbDriver
 {
+    static _cache = {};
+
     constructor(dbName) {
         super(dbName);
 
         this._storeName = 'main-store';
+    }
+
+    _cacheCollection(collection, data) {
+        if (!IndexedDB._cache[this._dbName]) {
+            IndexedDB._cache[this._dbName] = {};
+        }
+
+        IndexedDB._cache[this._dbName][collection] = data.map(i => i);
+    }
+
+    _cacheDoc(collection, data) {
+        if (!IndexedDB._cache[this._dbName]) {
+            IndexedDB._cache[this._dbName] = {};
+        }
+
+        if (!IndexedDB._cache[this._dbName][collection]) {
+            IndexedDB._cache[this._dbName][collection] = [];
+        }
+
+        IndexedDB._cache[this._dbName][collection].push(Object.assign({}, data));
+    }
+
+    _updateCachedDoc(collection, data) {
+        if (!IndexedDB._cache[this._dbName]) {
+            IndexedDB._cache[this._dbName] = {};
+        }
+
+        if (!IndexedDB._cache[this._dbName][collection]) {
+            IndexedDB._cache[this._dbName][collection] = [];
+        }
+
+        let cachedDocIndex = IndexedDB._cache[this._dbName][collection].findIndex(item => {
+            return item._id === data._id;
+        });
+
+        if (cachedDocIndex) {
+            IndexedDB._cache[this._dbName][collection][cachedDocIndex] = Object.assign({}, data);
+        } else {
+            IndexedDB._cache[this._dbName][collection].push(Object.assign({}, data));
+        }
+    }
+
+    _deleteCachedDoc(collection, id) {
+        if (!IndexedDB._cache[this._dbName]) {
+            return;
+        }
+
+        if (!IndexedDB._cache[this._dbName][collection]) {
+            return;
+        }
+
+        let cachedDocIndex = IndexedDB._cache[this._dbName][collection].findIndex(item => {
+            return item._id === id;
+        });
+
+        if (cachedDocIndex) {
+            IndexedDB._cache[this._dbName][collection].splice(cachedDocIndex, 1);
+        }
+    }
+
+    _getCollectionFromCache(collection) {
+        return IndexedDB._cache[this._dbName] && IndexedDB._cache[this._dbName][collection]
+            ? IndexedDB._cache[this._dbName][collection].map(i => i)
+            : null;
     }
 
     /**
@@ -92,6 +158,8 @@ class IndexedDB extends DbDriver
             data
         );
 
+        this._cacheDoc(data._collection, data);
+
         // Return the newly created object
         return await this.getById(id);
     }
@@ -109,6 +177,8 @@ class IndexedDB extends DbDriver
             'put',
             doc
         );
+
+        this._updateCachedDoc(doc._collection, doc);
 
         // Return the updated object
         return doc;
@@ -145,6 +215,21 @@ class IndexedDB extends DbDriver
      */
     async get(query) {
         return new Promise((resolve, reject) => {
+            let results = {
+                docs: [],
+                total: 0,
+            };
+
+            if (query.collection) {
+                let cached = this._getCollectionFromCache(query.collection);
+
+                if (cached !== null && Array.isArray(cached)) {
+                    results.docs = cached;
+
+                    return resolve(this._filterResults(Object.assign({}, results), query));
+                }
+            }
+
             const store = this._getStore();
             let request;
 
@@ -154,49 +239,20 @@ class IndexedDB extends DbDriver
                 request = store.openCursor();
             }
 
-            let results = {
-                docs: [],
-                total: 0,
-            };
-
             request.onsuccess = (e) => {
                 let cursor = e.target.result;
 
                 if (cursor) {
-                    // Filter out the results that don't pass all the WHERE
-                    // conditions
-                    if (!this._queryWhere(cursor.value, query.wheres)) {
-                        cursor.continue();
-
-                        return;
-                    }
-
                     results.docs.push(cursor.value);
 
                     cursor.continue();
                 } else {    // No more items
-                    // Sort the final results
-                    if (query.orders.length) {
-                        results.docs = results.docs.sort(this._sortFunction(query.orders));
+                    if (query.collection) {
+                        // Cache the complete unfiltered collection
+                        this._cacheCollection(query.collection, results.docs);
                     }
 
-                    // Count the total amount of docs
-                    results.total = results.docs.length;
-
-                    // Take a subset of the results
-                    const from = query.from ? query.from : 0;
-                    const to = (query.limit ? query.limit : results.total)
-                        + from;
-
-                    results.docs = results.docs.slice(from, to);
-
-                    // Group the results
-                    results.docs = this._groupResults(
-                        results.docs,
-                        query.groupBys.map(i => i)
-                    );
-
-                    resolve(results);
+                    resolve(this._filterResults(Object.assign({}, results), query));
                 }
             }
 
@@ -257,6 +313,12 @@ class IndexedDB extends DbDriver
      * @param {string} id
      */
     async deleteById(id) {
+        const doc = this.getById(id);
+    
+        if (doc) {
+            this._deleteCachedDoc(doc._collection, id);
+        }
+
         return await this._asyncRequest(this._getStore('readwrite'), 'delete', id);
     }
 
@@ -273,10 +335,43 @@ class IndexedDB extends DbDriver
      * Wipe out the entire DB.
      */
     async wipeDb() {
+        // TODO: Wipe cache
+
         return await this._asyncRequest(
             this._getStore('readwrite'),
             'clear'
         );
+    }
+
+    _filterResults(results, query) {
+        // Filter out the results that don't pass all the WHERE
+        // conditions
+        results.docs = results.docs.filter(doc => {
+            return this._queryWhere(doc, query.wheres);
+        });
+
+        // Sort the results
+        if (query.orders.length) {
+            results.docs = results.docs.sort(this._sortFunction(query.orders));
+        }
+
+        // Count the total amount of docs
+        results.total = results.docs.length;
+
+        // Take a subset of the results
+        const from = query.from ? query.from : 0;
+        const to = (query.limit ? query.limit : results.total)
+            + from;
+
+        results.docs = results.docs.slice(from, to);
+
+        // Group the results
+        results.docs = this._groupResults(
+            results.docs,
+            query.groupBys.map(i => i)
+        );
+
+        return results;
     }
 
     /**

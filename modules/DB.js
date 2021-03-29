@@ -260,7 +260,7 @@ class DB
                 this._cache[type][key] = Object.assign({}, options.data);
             }
         } else if (type === 'collections') {
-            this._cache[type] = options.data;
+            this._cache[type] = options.data.map(i => i);
         }
     }
 
@@ -284,7 +284,9 @@ class DB
                 key = sha256(JSON.stringify(options.query));
             }
         } else if (type === 'collections') {
-            return this._cache[type] ? this._cache[type] : null;
+            return this._cache[type]
+                ? this._cache[type].map(i => i)
+                : null;
         }
 
         return key && this._cache[type][key]
