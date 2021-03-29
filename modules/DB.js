@@ -259,6 +259,8 @@ class DB
     
                 this._cache[type][key] = Object.assign({}, options.data);
             }
+        } else if (type === 'collections') {
+            this._cache[type] = options.data;
         }
     }
 
@@ -281,6 +283,8 @@ class DB
             if (options.query.collection) {
                 key = sha256(JSON.stringify(options.query));
             }
+        } else if (type === 'collections') {
+            return this._cache[type] ? this._cache[type] : null;
         }
 
         return key && this._cache[type][key]
@@ -344,6 +348,10 @@ class DB
         this._cacheResults('single', { id: data._id, data });
         this._invalidateCacheTypes(['multiple', 'first']);
 
+        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(data._collection) === -1) {
+            this._cache.collections.push(data._collection);
+        }
+
         // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // data._revs.push(this._makeRevision(this._revActions.create, {}, data));
@@ -364,6 +372,10 @@ class DB
 
         this._cacheResults('single', { id: data._id, data });
         this._invalidateCacheTypes(['multiple', 'first']);
+
+        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(data._collection) === -1) {
+            this._cache.collections.push(data._collection);
+        }
 
         // Call the driver method
         return await this._driver.create(data);
@@ -537,6 +549,10 @@ class DB
 
         this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
+
+        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(collection) === -1) {
+            this._cache.collections.push(collection);
+        }
 
         return doc;
     }
@@ -1164,10 +1180,21 @@ class DB
      * @return {Array}
      */
     async getCollections() {
+        // Return cached results if any
+        let results = this._getCached('collections');
+
+        if (results !== null && Array.isArray(results)) {
+            return results;
+        }
+
         // Make sure the driver is initialized
         await this._initDriver();
 
-        return await this._driver.getCollections();
+        results = await this._driver.getCollections();
+
+        this._cacheResults('collections', { data: results });
+
+        return results;
     }
 
     /**
