@@ -8,8 +8,7 @@
     export let value = false;
     export let rules = '';
     export let disabled = false;
-
-    let className = 'kc-component--switch';
+    export let className = 'kc-component--switch';
 </script>
 
 <style lang="scss">
@@ -89,7 +88,9 @@
     bind:value={value}
     className={className + (disabled ? ' disabled' : '')}
 >
-    <div class="label">{ label }</div>
+    {#if label}
+        <div class="label">{ label }</div>
+    {/if}
     
     <div class="value">
         <label class="switch" class:disabled={disabled}>

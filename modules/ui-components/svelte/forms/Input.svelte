@@ -13,9 +13,8 @@
     export let rules = '';
     export let disabled = false;
     export let autocomplete = [];
+    export let className = 'kc-component--input';
     let showAutocomplete = false;
-
-    let className = 'kc-component--input';
 
     function onFocus() {
         showAutocomplete = true;
@@ -105,7 +104,9 @@
     bind:value={value}
     className={className + (disabled ? ' disabled' : '')}
 >
-    <div class="label">{ label }</div>
+    {#if label}
+        <div class="label">{ label }</div>
+    {/if}
     
     <div class="value">
         <input type="text"

@@ -9,8 +9,7 @@
     export let value = null;
     export let rules = '';
     export let disabled = false;
-    
-    let className = 'kc-component--select';
+    export let className = 'kc-component--select';
 
     function showSelect() {
         if (disabled) {
@@ -79,7 +78,9 @@
     className={className + (disabled ? ' disabled' : '')}
     on:click={showSelect}
 >
-    <div class="label">{ label }</div>
+    {#if label}
+        <div class="label">{ label }</div>
+    {/if}
     
     <div class="value">
         { value !== undefined && value !== null && options.hasOwnProperty(value) ? options[value] : '-' }

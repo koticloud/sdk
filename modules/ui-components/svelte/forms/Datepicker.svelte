@@ -9,12 +9,12 @@
     export let value = new Date();
     export let rules = '';
     export let disabled = false;
+    export let className = 'kc-component--datepicker';
 
     export let minDate = new Date(0);   // Earliest date possible
     export let maxDate = new Date();
     export let format = '#{F} #{d}, #{Y}';
 
-    let className = 'kc-component--datepicker';
     let formattedSelected = '';
 </script>
 
@@ -59,7 +59,9 @@
     bind:value={value}
     className={className + (disabled ? ' disabled' : '')}
 >
-    <div class="label">{ label }</div>
+    {#if label}
+        <div class="label">{ label }</div>
+    {/if}
 
     <div class="value">
         <Datepicker bind:selected={value}

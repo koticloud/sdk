@@ -12,8 +12,7 @@
 
     export let autocomplete = [];
     export let onlyUnique = true;
-
-    let className = 'kc-component--tags-input';
+    export let className = 'kc-component--tags-input';
 
     function onTagsUpdated(event) {
         value = event.detail.tags;
@@ -74,7 +73,9 @@
     bind:value={value}
     className={className + (disabled ? ' disabled' : '')}
 >
-    <div class="label">{ label }</div>
+    {#if label}
+        <div class="label">{ label }</div>
+    {/if}
     
     <div class="value">
         <Tags on:tags={onTagsUpdated}
