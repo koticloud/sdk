@@ -1,3 +1,4 @@
+import Utils from "../Utils";
 import DbDriver from "./DbDriver";
 
 class IndexedDB extends DbDriver
@@ -15,7 +16,7 @@ class IndexedDB extends DbDriver
             IndexedDB._cache[this._dbName] = {};
         }
 
-        IndexedDB._cache[this._dbName][collection] = data.map(i => i);
+        IndexedDB._cache[this._dbName][collection] = Utils.cloneArray(data);
     }
 
     _cacheDoc(collection, data) {
@@ -70,7 +71,7 @@ class IndexedDB extends DbDriver
 
     _getCollectionFromCache(collection) {
         return IndexedDB._cache[this._dbName] && IndexedDB._cache[this._dbName][collection]
-            ? IndexedDB._cache[this._dbName][collection].map(i => i)
+            ? Utils.cloneArray(IndexedDB._cache[this._dbName][collection])
             : null;
     }
 

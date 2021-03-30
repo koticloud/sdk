@@ -5,6 +5,7 @@ import sha256 from 'js-sha256';
 import IndexedDB from './db-drivers/IndexedDB';
 import HasEvents from '../traits/HasEvents';
 import Api from './Api';
+import Utils from './Utils';
 
 class DB
 {
@@ -260,7 +261,7 @@ class DB
                 this._cache[type][key] = Object.assign({}, options.data);
             }
         } else if (type === 'collections') {
-            this._cache[type] = options.data.map(i => i);
+            this._cache[type] = Utils.cloneArray(options.data);
         }
     }
 
@@ -285,7 +286,7 @@ class DB
             }
         } else if (type === 'collections') {
             return this._cache[type]
-                ? this._cache[type].map(i => i)
+                ? Utils.cloneArray(this._cache[type])
                 : null;
         }
 
