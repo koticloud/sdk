@@ -415,6 +415,10 @@ class DB
         this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
 
+        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(doc._collection) === -1) {
+            this._cache.collections.push(doc._collection);
+        }
+
         // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
         // if (makeRevision) {
