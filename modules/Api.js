@@ -67,6 +67,26 @@ class Api {
     }
 
     /**
+     * Get currency exchange rates for the specified pairs and dates.
+     * Format: PHP_RUB_2020-04-01
+     * 
+     * @param {array} pairs
+     * 
+     * @return {Promise}
+     */
+    static getCurrencyRates(pairs) {
+        if (this._shouldMock()) {
+            return ApiMock.getCurrencyRates(pairs);
+        }
+
+        return axios.post('/api/apps/services/currency-converter', {
+            rates: pairs,
+        }, {
+            timeout: 1000 * 30, // Timeout 30 seconds
+        });
+    }
+
+    /**
      * Determine whether the API class should be mocked
      */
     static _shouldMock() {

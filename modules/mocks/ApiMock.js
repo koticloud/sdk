@@ -62,6 +62,30 @@ class ApiMock
         });
     }
 
+    /**
+     * Get currency exchange rates for the specified pairs and dates
+     * 
+     * @param {array} pairs
+     * 
+     * @return {Promise}
+     */
+    static getCurrencyRates(pairs) {
+        return new Promise((resolve, reject) => {
+            const response = {
+                data: {},
+            };
+
+            for (let pair of pairs) {
+                const [from, to, date] = pair.split('_');
+                const rate = from === to ? 1 : Math.random() * 2;
+
+                response.data[pair] = rate;
+            }
+
+            resolve(response);
+        });
+    }
+
     static _emptyResponse() {
         return new Promise((resolve, reject) => {
             resolve({
