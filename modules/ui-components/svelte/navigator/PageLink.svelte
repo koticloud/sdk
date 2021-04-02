@@ -9,6 +9,12 @@
     }
 </script>
 
-<tamplate on:click|preventDefault={() => navigate()}>
+<style lang="scss">
+.page-link-btn {
+    display: inline-block;
+}
+</style>
+
+<div class="page-link-btn" on:click|preventDefault={() => navigate()}>
     <slot></slot>
-</tamplate>
+</div>
