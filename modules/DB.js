@@ -832,8 +832,8 @@ class DB
 
             this._validating = false;
 
-            this._clearCache();
-            this._driver.clearCache();
+            // this._clearCache();
+            // this._driver.clearCache();
 
             this.emit('synced');
 
@@ -928,8 +928,8 @@ class DB
             this._syncing = false;
 
             if (fireEvents) {
-                this._clearCache();
-                this._driver.clearCache();
+                // this._clearCache();
+                // this._driver.clearCache();
 
                 this.emit('synced');
             }
@@ -1189,8 +1189,8 @@ class DB
     async wipe() {
         await this._driver.wipeDb();
 
-        this._clearCache();
-        this._driver.clearCache();
+        // this._clearCache();
+        // this._driver.clearCache();
 
         this.emit('synced');
 
