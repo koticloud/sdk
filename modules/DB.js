@@ -327,6 +327,13 @@ class DB
     }
 
     /**
+     * Clear the whole cache
+     */
+    _clearCache() {
+        this._cache = {};
+    }
+
+    /**
      * Create a new document. Throws an exception if the id inside the data
      * object is not unique.
      * 
@@ -825,6 +832,9 @@ class DB
 
             this._validating = false;
 
+            this._clearCache();
+            this._driver.clearCache();
+
             this.emit('synced');
 
             return true;
@@ -914,6 +924,9 @@ class DB
 
             // // Delete the docs that were purged/deleted from the server
             // await this.syncDeletePurged(diffs.deleted);
+
+            this._clearCache();
+            this._driver.clearCache();
 
             this._syncing = false;
 
@@ -1175,6 +1188,9 @@ class DB
      */
     async wipe() {
         await this._driver.wipeDb();
+
+        this._clearCache();
+        this._driver.clearCache();
 
         this.emit('synced');
 

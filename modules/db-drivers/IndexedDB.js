@@ -12,7 +12,7 @@ class IndexedDB extends DbDriver
     }
 
     _cacheCollection(collection, data) {
-        if (!IndexedDB._cache[this._dbName]) {
+        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
             IndexedDB._cache[this._dbName] = {};
         }
 
@@ -20,11 +20,11 @@ class IndexedDB extends DbDriver
     }
 
     _cacheDoc(collection, data) {
-        if (!IndexedDB._cache[this._dbName]) {
+        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
             IndexedDB._cache[this._dbName] = {};
         }
 
-        if (!IndexedDB._cache[this._dbName][collection]) {
+        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
             IndexedDB._cache[this._dbName][collection] = [];
         }
 
@@ -32,11 +32,11 @@ class IndexedDB extends DbDriver
     }
 
     _updateCachedDoc(collection, data) {
-        if (!IndexedDB._cache[this._dbName]) {
+        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
             IndexedDB._cache[this._dbName] = {};
         }
 
-        if (!IndexedDB._cache[this._dbName][collection]) {
+        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
             IndexedDB._cache[this._dbName][collection] = [];
         }
 
@@ -52,11 +52,11 @@ class IndexedDB extends DbDriver
     }
 
     _deleteCachedDoc(collection, id) {
-        if (!IndexedDB._cache[this._dbName]) {
+        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
             return;
         }
 
-        if (!IndexedDB._cache[this._dbName][collection]) {
+        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
             return;
         }
 
@@ -69,10 +69,28 @@ class IndexedDB extends DbDriver
         }
     }
 
+    _deleteCachedCollection(collection) {
+        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
+            return;
+        }
+
+        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
+            return;
+        }
+
+        delete IndexedDB._cache[this._dbName][collection];
+    }
+
     _getCollectionFromCache(collection) {
         return IndexedDB._cache[this._dbName] && IndexedDB._cache[this._dbName][collection]
             ? Utils.cloneArray(IndexedDB._cache[this._dbName][collection])
             : null;
+    }
+
+    clearCache() {
+        if (IndexedDB._cache.hasOwnProperty(this._dbName)) {
+            delete IndexedDB._cache[this._dbName];
+        }
     }
 
     /**
