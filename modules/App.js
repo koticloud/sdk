@@ -335,6 +335,8 @@ class App {
             await this.db.sync();
             await this.prefs.sync();
         } catch (error) {
+            console.error(error);
+
             if (error.response && error.response.status == 401) {
                 this.ui.notify(`You are not logged in at <a href="${this.baseUrl()}" target="_blank" rel="noopener noreferrer">Koti Cloud</a>. Data synchronization between your devices and browsers will not work.`);
 
