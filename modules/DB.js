@@ -925,12 +925,12 @@ class DB
             // // Delete the docs that were purged/deleted from the server
             // await this.syncDeletePurged(diffs.deleted);
 
-            this._clearCache();
-            this._driver.clearCache();
-
             this._syncing = false;
 
             if (fireEvents) {
+                this._clearCache();
+                this._driver.clearCache();
+
                 this.emit('synced');
             }
 
