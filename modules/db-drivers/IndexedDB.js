@@ -44,7 +44,7 @@ class IndexedDB extends DbDriver
             return item._id === data._id;
         });
 
-        if (cachedDocIndex) {
+        if (cachedDocIndex !== -1) {
             IndexedDB._cache[this._dbName][collection][cachedDocIndex] = Object.assign({}, data);
         } else {
             IndexedDB._cache[this._dbName][collection].push(Object.assign({}, data));
@@ -64,7 +64,7 @@ class IndexedDB extends DbDriver
             return item._id === id;
         });
 
-        if (cachedDocIndex) {
+        if (cachedDocIndex !== -1) {
             IndexedDB._cache[this._dbName][collection].splice(cachedDocIndex, 1);
         }
     }
@@ -82,7 +82,7 @@ class IndexedDB extends DbDriver
     }
 
     _getCollectionFromCache(collection) {
-        return IndexedDB._cache[this._dbName] && IndexedDB._cache[this._dbName][collection]
+        return IndexedDB._cache.hasOwnProperty(this._dbName) && IndexedDB._cache[this._dbName].hasOwnProperty(collection)
             ? Utils.cloneArray(IndexedDB._cache[this._dbName][collection])
             : null;
     }
