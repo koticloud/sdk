@@ -322,7 +322,9 @@ class DB
      */
     _invalidateCacheTypes(types) {
         for (let type of types) {
-            delete this._cache[type];
+            if (this._cache.hasOwnProperty(type)) {
+                delete this._cache[type];
+            }
         }
     }
 
