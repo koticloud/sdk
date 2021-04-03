@@ -332,7 +332,7 @@ class IndexedDB extends DbDriver
      * @param {string} id
      */
     async deleteById(id) {
-        const doc = this.getById(id);
+        const doc = await this.getById(id);
     
         if (doc) {
             this._deleteCachedDoc(doc._collection, id);
