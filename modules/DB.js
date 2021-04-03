@@ -310,7 +310,7 @@ class DB
             key = sha256(JSON.stringify(options.query));
         }
 
-        if (key && this._cache[type][key]) {
+        if (key && this._cache.hasOwnProperty(type) && this._cache[type].hasOwnProperty(key)) {
             delete this._cache[type][key];
         }
     }
