@@ -5,7 +5,6 @@ import sha256 from 'js-sha256';
 import IndexedDB from './db-drivers/IndexedDB';
 import HasEvents from '../traits/HasEvents';
 import Api from './Api';
-import Utils from './Utils';
 
 class DB
 {
@@ -252,16 +251,12 @@ class DB
             this._cache[type] = {};
         }
 
-        if (type === 'single') {
-            this._cache[type][options.id] = Object.assign({}, options.data);
-        } else if (type === 'multiple' || type === 'first') {
+        if (type === 'multiple' || type === 'first') {
             if (options.query.collection) {
                 const key = sha256(JSON.stringify(options.query));
     
                 this._cache[type][key] = Object.assign({}, options.data);
             }
-        } else if (type === 'collections') {
-            this._cache[type] = Utils.cloneArray(options.data);
         }
     }
 
@@ -278,41 +273,15 @@ class DB
 
         let key;
 
-        if (type === 'single') {
-            key = options.id;
-        } else if (type === 'multiple' || type === 'first') {
+        if (type === 'multiple' || type === 'first') {
             if (options.query.collection) {
                 key = sha256(JSON.stringify(options.query));
             }
-        } else if (type === 'collections') {
-            return this._cache[type]
-                ? Utils.cloneArray(this._cache[type])
-                : null;
         }
 
         return key && this._cache[type][key]
             ? Object.assign({}, this._cache[type][key])
             : null;
-    }
-
-    /**
-     * Invalidate a single cache item
-     * 
-     * @param {String} type
-     * @param {object} options
-     */
-    _invalidateCache(type, options) {
-        let key;
-
-        if (type === 'single') {
-            key = options.id;
-        } else if (type === 'multiple' || type === 'first') {
-            key = sha256(JSON.stringify(options.query));
-        }
-
-        if (key && this._cache.hasOwnProperty(type) && this._cache[type].hasOwnProperty(key)) {
-            delete this._cache[type][key];
-        }
     }
 
     /**
@@ -357,12 +326,7 @@ class DB
             // _revs: [], // NOTE: Temporarily disabled as not using diff/patch anymore
         });
 
-        this._cacheResults('single', { id: data._id, data });
         this._invalidateCacheTypes(['multiple', 'first']);
-
-        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(data._collection) === -1) {
-            this._cache.collections.push(data._collection);
-        }
 
         // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
@@ -382,12 +346,7 @@ class DB
         // Make sure the driver is initialized
         await this._initDriver();
 
-        this._cacheResults('single', { id: data._id, data });
         this._invalidateCacheTypes(['multiple', 'first']);
-
-        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(data._collection) === -1) {
-            this._cache.collections.push(data._collection);
-        }
 
         // Call the driver method
         return await this._driver.create(data);
@@ -421,12 +380,7 @@ class DB
             doc._updated_at = this._now();
         }
 
-        this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
-
-        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(doc._collection) === -1) {
-            this._cache.collections.push(doc._collection);
-        }
 
         // NOTE: Temporarily disabled as not using diff/patch anymore
         // // Add a revision
@@ -475,7 +429,6 @@ class DB
         doc._updated_at = this._now();
         doc._synced = false;
 
-        this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
 
         // NOTE: Temporarily disabled as not using diff/patch anymore
@@ -505,7 +458,6 @@ class DB
         doc._purged = 1;
         doc._synced = false;
 
-        this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
 
         // NOTE: Temporarily disabled as not using diff/patch anymore
@@ -534,7 +486,6 @@ class DB
         doc._updated_at = this._now();
         doc._synced = false;
 
-        this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
 
         // NOTE: Temporarily disabled as not using diff/patch anymore
@@ -563,12 +514,7 @@ class DB
             doc = await this._driver.update(doc);
         }
 
-        this._cacheResults('single', { id: doc._id, data: doc });
         this._invalidateCacheTypes(['multiple', 'first']);
-
-        if (Array.isArray(this._cache.collections) && this._cache.collections.indexOf(collection) === -1) {
-            this._cache.collections.push(collection);
-        }
 
         return doc;
     }
@@ -659,20 +605,11 @@ class DB
      * @param {string} id 
      */
     async getById(id) {
-        // Return cached results if any
-        let doc = this._getCached('single', { id });
-
-        if (doc) {
-            return doc;
-        }
-
         // Make sure the driver is initialized
         await this._initDriver();
 
         // Call the driver method
-        doc = await this._driver.getById(id, this._query);
-
-        this._cacheResults('single', { id, data: doc });
+        const doc = await this._driver.getById(id, this._query);
 
         if (!doc) {
             return null;
@@ -696,7 +633,6 @@ class DB
         // Call the driver method
         await this._driver.deleteById(id);
 
-        this._invalidateCache('single', { id });
         this._invalidateCacheTypes(['multiple', 'first']);
 
         return true;
@@ -1205,21 +1141,10 @@ class DB
      * @return {Array}
      */
     async getCollections() {
-        // Return cached results if any
-        let results = this._getCached('collections');
-
-        if (results !== null && Array.isArray(results)) {
-            return results;
-        }
-
         // Make sure the driver is initialized
         await this._initDriver();
 
-        results = await this._driver.getCollections();
-
-        this._cacheResults('collections', { data: results });
-
-        return results;
+        return await this._driver.getCollections();
     }
 
     /**

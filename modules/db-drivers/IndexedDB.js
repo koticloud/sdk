@@ -11,44 +11,67 @@ class IndexedDB extends DbDriver
         this._storeName = 'main-store';
     }
 
-    _cacheCollection(collection, data) {
+    _initCacheForDb() {
         if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
-            IndexedDB._cache[this._dbName] = {};
+            IndexedDB._cache[this._dbName] = Object.assign({}, {
+                byCollection: {},
+                byId: {},
+                collections: null,
+            });
         }
+    }
 
-        IndexedDB._cache[this._dbName][collection] = Utils.cloneArray(data);
+    _cacheCollections(collections) {
+        this._initCacheForDb();
+
+        IndexedDB._cache[this._dbName]['collections'] = Utils.cloneArray(
+            collections.sort()
+        );
+    }
+
+    /**
+     * Add a single collection to the collections cache if it's not there yet
+     * 
+     * @param {*} collection 
+     */
+    _addCollectionToCache(collection) {
+        if (Array.isArray(IndexedDB._cache[this._dbName]['collections']) && IndexedDB._cache[this._dbName]['collections'].indexOf(collection) === -1) {
+            IndexedDB._cache[this._dbName]['collections'].push(collection);
+
+            IndexedDB._cache[this._dbName]['collections'] = IndexedDB._cache[this._dbName]['collections'].sort();
+        }
+    }
+
+    _cacheCollection(collection, data) {
+        this._initCacheForDb(collection);
+
+        IndexedDB._cache[this._dbName]['byCollection'][collection] = Utils.cloneArray(data);
     }
 
     _cacheDoc(collection, data) {
-        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
-            IndexedDB._cache[this._dbName] = {};
+        this._initCacheForDb();
+
+        // Cache doc by ID
+        IndexedDB._cache[this._dbName]['byId'][data._id] = Object.assign({}, data);
+
+        // Cache doc in a collection
+        if (!IndexedDB._cache[this._dbName]['byCollection'].hasOwnProperty(collection)) {
+            return;
         }
 
-        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
-            IndexedDB._cache[this._dbName][collection] = [];
-        }
-
-        IndexedDB._cache[this._dbName][collection].push(Object.assign({}, data));
-    }
-
-    _updateCachedDoc(collection, data) {
-        if (!IndexedDB._cache.hasOwnProperty(this._dbName)) {
-            IndexedDB._cache[this._dbName] = {};
-        }
-
-        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
-            IndexedDB._cache[this._dbName][collection] = [];
-        }
-
-        let cachedDocIndex = IndexedDB._cache[this._dbName][collection].findIndex(item => {
-            return item._id === data._id;
-        });
+        let cachedDocIndex = IndexedDB._cache[this._dbName]['byCollection'][collection]
+            .findIndex(item => {
+                return item._id === data._id;
+            });
 
         if (cachedDocIndex !== -1) {
-            IndexedDB._cache[this._dbName][collection][cachedDocIndex] = Object.assign({}, data);
+            IndexedDB._cache[this._dbName]['byCollection'][collection][cachedDocIndex] = Object.assign({}, data);
         } else {
-            IndexedDB._cache[this._dbName][collection].push(Object.assign({}, data));
+            IndexedDB._cache[this._dbName]['byCollection'][collection].push(Object.assign({}, data));
         }
+
+        // Add doc's collection to the collections cache if it's not there yet
+        this._addCollectionToCache(data._collection);
     }
 
     _deleteCachedDoc(collection, id) {
@@ -56,16 +79,23 @@ class IndexedDB extends DbDriver
             return;
         }
 
-        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
+        // Delete doc from cache-by-id
+        if (IndexedDB._cache[this._dbName]['byId'].hasOwnProperty(id)) {
+            delete IndexedDB._cache[this._dbName]['byId'][id];
+        }
+
+        // Delete doc from the collection's cache
+        if (!IndexedDB._cache[this._dbName]['byCollection'].hasOwnProperty(collection)) {
             return;
         }
 
-        let cachedDocIndex = IndexedDB._cache[this._dbName][collection].findIndex(item => {
-            return item._id === id;
-        });
+        let cachedDocIndex = IndexedDB._cache[this._dbName]['byCollection'][collection]
+            .findIndex(item => {
+                return item._id === id;
+            });
 
         if (cachedDocIndex !== -1) {
-            IndexedDB._cache[this._dbName][collection].splice(cachedDocIndex, 1);
+            IndexedDB._cache[this._dbName]['byCollection'][collection].splice(cachedDocIndex, 1);
         }
     }
 
@@ -74,16 +104,28 @@ class IndexedDB extends DbDriver
             return;
         }
 
-        if (!IndexedDB._cache[this._dbName].hasOwnProperty(collection)) {
+        if (!IndexedDB._cache[this._dbName]['byCollection'].hasOwnProperty(collection)) {
             return;
         }
 
-        delete IndexedDB._cache[this._dbName][collection];
+        delete IndexedDB._cache[this._dbName]['byCollection'][collection];
     }
 
     _getCollectionFromCache(collection) {
-        return IndexedDB._cache.hasOwnProperty(this._dbName) && IndexedDB._cache[this._dbName].hasOwnProperty(collection)
-            ? Utils.cloneArray(IndexedDB._cache[this._dbName][collection])
+        return IndexedDB._cache.hasOwnProperty(this._dbName) && IndexedDB._cache[this._dbName].hasOwnProperty('byCollection') && IndexedDB._cache[this._dbName]['byCollection'].hasOwnProperty(collection)
+            ? Utils.cloneArray(IndexedDB._cache[this._dbName]['byCollection'][collection])
+            : null;
+    }
+
+    _getCollectionsFromCache() {
+        return IndexedDB._cache.hasOwnProperty(this._dbName) && IndexedDB._cache[this._dbName].hasOwnProperty('collections') && IndexedDB._cache[this._dbName]['collections'] !== null
+            ? Utils.cloneArray(IndexedDB._cache[this._dbName]['collections'])
+            : null;
+    }
+
+    _getDocFromCache(id) {
+        return IndexedDB._cache.hasOwnProperty(this._dbName) && IndexedDB._cache[this._dbName].hasOwnProperty('byId') && IndexedDB._cache[this._dbName]['byId'].hasOwnProperty(id)
+            ? Object.assign({}, IndexedDB._cache[this._dbName]['byId'][id])
             : null;
     }
 
@@ -197,7 +239,7 @@ class IndexedDB extends DbDriver
             doc
         );
 
-        this._updateCachedDoc(doc._collection, doc);
+        this._cacheDoc(doc._collection, doc);
 
         // Return the updated object
         return doc;
@@ -210,20 +252,27 @@ class IndexedDB extends DbDriver
      * @return {object} document
      */
     async getById(id, query = null) {
-        let item = null;
+        let doc = this._getDocFromCache(id);
 
-        try {
-            item = await this._asyncRequest(this._getStore(), 'get', id);
-        } catch (error) {
+        if (doc === null) {
+            try {
+                doc = await this._asyncRequest(this._getStore(), 'get', id);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        // Filter out the doc if it doesn't pass all the WHERE conditions
+        if (doc && query && !this._queryWhere(doc, query.wheres)) {
             return null;
         }
 
-        // Filter out the item if it doesn't pass all the WHERE conditions
-        if (item && query && !this._queryWhere(item, query.wheres)) {
-            return null;
+        // Cache the result
+        if (doc) {
+            this._cacheDoc(doc._collection, doc);
         }
 
-        return item;
+        return doc;
     }
 
     /**
@@ -291,6 +340,12 @@ class IndexedDB extends DbDriver
      * @return {Array}
      */
     async getCollections() {
+        const cached = this._getCollectionsFromCache();
+
+        if (cached !== null && Array.isArray(cached)) {
+            return cached;
+        }
+
         return new Promise((resolve, reject) => {
             const store = this._getStore();
             let request;
@@ -311,6 +366,9 @@ class IndexedDB extends DbDriver
                 } else {    // No more items
                     // Sort the final results
                     results = results.sort();
+
+                    // Cache results
+                    this._cacheCollections(results);
 
                     resolve(results);
                 }
@@ -354,7 +412,7 @@ class IndexedDB extends DbDriver
      * Wipe out the entire DB.
      */
     async wipeDb() {
-        // TODO: Wipe cache
+        this.clearCache();
 
         return await this._asyncRequest(
             this._getStore('readwrite'),
