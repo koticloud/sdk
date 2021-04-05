@@ -36,6 +36,11 @@ class CurrencyConverter
                     && item.date === date;
             });
 
+            // Don't update the local rate if the rate hasn't changed
+            if (localRate && localRate.rate === results[key]) {
+                continue;
+            }
+
             if (!localRate) {
                 localRate = {};
             }
