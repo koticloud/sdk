@@ -54,6 +54,9 @@ class IndexedDB extends DbDriver
         // Cache doc by ID
         IndexedDB._cache[this._dbName]['byId'][data._id] = Object.assign({}, data);
 
+        // Add doc's collection to the collections cache if it's not there yet
+        this._addCollectionToCache(data._collection);
+
         // Cache doc in a collection
         if (!IndexedDB._cache[this._dbName]['byCollection'].hasOwnProperty(collection)) {
             return;
@@ -69,9 +72,6 @@ class IndexedDB extends DbDriver
         } else {
             IndexedDB._cache[this._dbName]['byCollection'][collection].push(Object.assign({}, data));
         }
-
-        // Add doc's collection to the collections cache if it's not there yet
-        this._addCollectionToCache(data._collection);
     }
 
     _deleteCachedDoc(collection, id) {
