@@ -60,6 +60,25 @@ class DB
         });
     }
 
+    async runMigrations(migrations) {
+        for (let name in migrations) {
+            // Check if the migraiton was run already
+            const exists = await this.collection('_migrations')
+                .where('name', name)
+                .first();
+
+            if (exists) {
+                continue;
+            }
+
+            // Run the migration
+            migrations[name](this);
+
+            // Save migration name to the migrations collection
+            this.collection('_migrations').create({ name });
+        }
+    }
+
     /**
      * Initialize a query on a DB collection.
      * 

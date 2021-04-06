@@ -45,7 +45,15 @@ class App {
         this._registerServiceWorker(options.serviceWorker);
 
         if (options.db) {
-            this.db = new DB(options.db);
+            if (typeof options.db === 'string') {
+                this.db = new DB(options.db);
+            } else {
+                this.db = new DB(options.db.name);
+            }
+
+            if (options.db.migrations) {
+                this.db.runMigrations(options.db.migrations);
+            }
 
             this._syncDbOnAppStart();
         }
