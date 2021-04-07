@@ -3,6 +3,8 @@ import App from "../modules/App";
 
 class CurrencyConverter
 {
+    static rates = null;
+
     /**
      * Fetch the requested rates from the API, store in the local DB.
      * Format: PHP_RUB_2020-04-01
@@ -54,7 +56,34 @@ class CurrencyConverter
                 .updateOrCreate(localRate);
         }
 
+        // Update the "cached" rates map
+        CurrencyConverter.rates = null;
+        CurrencyConverter.getRatesMap();
+
         return true;
+    }
+
+    static async getRatesMap() {
+        if (!CurrencyConverter.rates) {
+            const db = App.get().db;
+
+            if (db === null) {
+                throw 'CurrencyConverter service requires your app to have a local DB to work properly.';
+            }
+
+            const data = (await db.collection('_service_currency_rates').get());
+            const map = {};
+
+            data.docs.map(item => {
+                const key = `${item.currency_from}_${item.currency_to}_${item.date}`;
+
+                item[key] = item.rate;
+            });
+            
+            CurrencyConverter.rates = map;
+        }
+
+        return CurrencyConverter.rates;
     }
 
     /**
@@ -76,25 +105,8 @@ class CurrencyConverter
         }
 
         // Try to find rate locally
-        let rate = await db.collection('_service_currency_rates')
-            .where('currency_from', fromCurrency)
-            .where('currency_to', toCurrency)
-            .where('date', date)
-            .first();
-
-        if (rate) {
-            return rate.rate;
-        }
-
-        // If rate not found locally - try fetching it from API
-        await CurrencyConverter.updateRates([`${fromCurrency}_${toCurrency}_${date}`]);
-
-        // Get the rate again
-        rate = await db.collection('_service_currency_rates')
-            .where('currency_from', fromCurrency)
-            .where('currency_to', toCurrency)
-            .where('date', date)
-            .first();
+        const key = `${fromCurrency}_${toCurrency}_${date}`;
+        const rate = CurrencyConverter.getRatesMap[key];
 
         return rate ? rate.rate : null;
     }
