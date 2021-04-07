@@ -72,7 +72,7 @@ class DB
             }
 
             // Run the migration
-            migrations[name](this);
+            await migrations[name](this);
 
             // Save migration name to the migrations collection
             this.collection('_migrations').create({ name });
