@@ -777,8 +777,6 @@ class DB
                 return true;
             }
 
-            this.emit('syncing');
-
             const docIds = allDocs.docs.map(item => item._id);
 
             // Upload the data
@@ -791,8 +789,6 @@ class DB
 
             // this._clearCache();
             // this._driver.clearCache();
-
-            this.emit('synced');
 
             return true;
         } catch (error) {
