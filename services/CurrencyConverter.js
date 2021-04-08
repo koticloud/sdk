@@ -1,5 +1,6 @@
 import Api from "../modules/Api";
 import App from "../modules/App";
+import Utils from "../modules/Utils";
 
 class CurrencyConverter
 {
@@ -10,12 +11,29 @@ class CurrencyConverter
      * Format: PHP_RUB_2020-04-01
      * 
      * @param {array} rates 
+     * @param {boolean} force 
      */
-    static async updateRates(rates) {
+    static async updateRates(rates, force = false) {
         const db = App.get().db;
 
         if (db === null) {
             throw 'CurrencyConverter service requires your app to have a local DB to work properly.';
+        }
+
+        // Exclude rates that are already stored locally
+        const filteredRates = [];
+
+        if (!force) {
+            for (let i = 0; i < rates.length; i++) {
+                const [from, to, date] = rates[i].split('_');
+                const localRate = await CurrencyConverter.getRate(from, to, date);
+
+                if (localRate === null || localRate === undefined) {
+                    filteredRates.push(rates[i]);
+                }
+            }
+        } else {
+            filteredRates = rates;
         }
 
         // Fetch currency rates from the API
@@ -58,7 +76,7 @@ class CurrencyConverter
 
         // Update the "cached" rates map
         CurrencyConverter.rates = null;
-        CurrencyConverter.getRatesMap();
+        await CurrencyConverter.getRatesMap();
 
         return true;
     }
@@ -71,13 +89,13 @@ class CurrencyConverter
                 throw 'CurrencyConverter service requires your app to have a local DB to work properly.';
             }
 
-            const data = (await db.collection('_service_currency_rates').get());
+            const data = await db.collection('_service_currency_rates').get();
             const map = {};
 
             data.docs.map(item => {
                 const key = `${item.currency_from}_${item.currency_to}_${item.date}`;
 
-                item[key] = item.rate;
+                map[key] = item.rate;
             });
             
             CurrencyConverter.rates = map;
@@ -101,14 +119,14 @@ class CurrencyConverter
         }
 
         if (!date) {
-            date = new Date().toISOString().split('T')[0];
+            date = Utils.formatDate(new Date());
         }
 
         // Try to find rate locally
         const key = `${fromCurrency}_${toCurrency}_${date}`;
-        const rate = CurrencyConverter.getRatesMap[key];
+        const rate = (await CurrencyConverter.getRatesMap())[key];
 
-        return rate ? rate.rate : null;
+        return rate || null;
     }
 
     /**
