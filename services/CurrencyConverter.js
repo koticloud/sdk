@@ -40,7 +40,7 @@ class CurrencyConverter
         let results;
 
         try {
-            results = (await Api.getCurrencyRates(rates)).data;
+            results = (await Api.getCurrencyRates(filteredRates)).data;
         } catch (err) {
             return false;
         }
