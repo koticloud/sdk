@@ -841,8 +841,11 @@ class DB
             }
 
             // Prepare the list of docs to upload
+            // Don't sync currency conversion rates since those are retrieved
+            // from the server anyway
             let docsToUpload = await this.withTrashed()
                 ._withPurged()
+                .where('_collection', '!=', '_service_currency_rates')
                 .where('_synced', false)
                 .get();
 
@@ -915,6 +918,12 @@ class DB
         // Create/update local docs
         for (let doc of data) {
             let docData = JSON.parse(doc.document);
+
+            // Don't sync currency conversion rates since those are retrieved
+            // from the server anyway
+            if (doc._collection === '_service_currency_rates') {
+                continue;
+            }
 
             // Delete forever the deleted/purged docs
             if (docData._purged) {
