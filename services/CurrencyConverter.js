@@ -36,6 +36,10 @@ class CurrencyConverter
             filteredRates = rates;
         }
 
+        if (!filteredRates.length) {
+            return true;
+        }
+
         // Fetch currency rates from the API
         let results;
 
@@ -92,11 +96,18 @@ class CurrencyConverter
             const data = await db.collection('_service_currency_rates').get();
             const map = {};
 
-            data.docs.map(item => {
+            for (let i = 0; i < data.docs.length; i++) {
+                const item = data.docs[i];
                 const key = `${item.currency_from}_${item.currency_to}_${item.date}`;
 
-                map[key] = item.rate;
-            });
+                if (!map.hasOwnProperty(key)) {
+                    map[key] = item.rate;
+                } else {
+                    // Delete duplicate data if any since we're looping through
+                    // all the local rates
+                    await db.collection('_service_currency_rates').delete(item);
+                }
+            }
             
             CurrencyConverter.rates = map;
         }
