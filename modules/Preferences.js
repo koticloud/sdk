@@ -96,6 +96,17 @@ class Preferences {
             this.emit('synced');
         } catch (e) { }
     }
+
+    /**
+     * Wipe out the whole DB
+     */
+    async wipe() {
+        await this._db.wipe(false);
+
+        this.emit('synced');
+
+        return true;
+    }
 }
 
 /**

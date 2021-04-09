@@ -1148,13 +1148,15 @@ class DB
     /**
      * Wipe out the whole DB
      */
-    async wipe() {
+    async wipe(fireEvents = true) {
         await this._driver.wipeDb();
 
         // this._clearCache();
         // this._driver.clearCache();
 
-        this.emit('synced');
+        if (fireEvents) {
+            this.emit('synced');
+        }
 
         return true;
     }

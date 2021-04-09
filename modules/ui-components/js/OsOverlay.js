@@ -56,11 +56,11 @@ class OsOverlay extends Component
 
             <div class="kc--os-overlay--actions">
                 <a href="${this._app.baseUrl()}/"
-                    class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data"
+                    class="kc--os-overlay--btn-link"
                 >Home Page</a>
 
                 <a href="${this._app.baseUrl()}/apps"
-                    class="kc--os-overlay--btn-link kc--os-overlay--actions--clear-local-data"
+                    class="kc--os-overlay--btn-link"
                 >More Apps</a>
             </div>
         `;
@@ -124,14 +124,11 @@ class OsOverlay extends Component
                 }
 
                 await this._app.db.wipe();
+                await this._app.prefs.wipe();
 
                 return this._onLocalDataCleared();
-                // TODO: Now I need access to app.db / db directly. Doesn't sound like a good thing to inject it here. Can we make a global window.app in App.init() (window.app = this)? Is it a good idea?
             })
-            .catch(err => {
-                console.log(err);
-                // Do nothing
-            });
+            .catch(err => {});
     }
 
     _forceUpdate() {
