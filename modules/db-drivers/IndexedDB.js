@@ -246,6 +246,28 @@ class IndexedDB extends DbDriver
     }
 
     /**
+     * Move a document to another collection.
+     * 
+     * @param {object} doc 
+     * @param {string} collection 
+     */
+    async move(doc, collection) {
+        if (doc._collection !== collection) {
+            // Delete doc from the old collection cache
+            this._deleteCachedDoc(doc._collection, doc._id);
+
+            // Update the document object
+            doc._collection = collection;
+
+            // Call the driver method
+            doc = await this.update(doc);
+        }
+
+        // Return the updated object
+        return doc;
+    }
+
+    /**
      * Get a document by id.
      * 
      * @param {string} id 

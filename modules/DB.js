@@ -530,10 +530,10 @@ class DB
             doc._collection = collection;
 
             // Call the driver method
-            doc = await this._driver.update(doc);
-        }
+            doc = await this._driver.move(doc, collection);
 
-        this._invalidateCacheTypes(['multiple', 'first']);
+            this._invalidateCacheTypes(['multiple', 'first']);
+        }
 
         return doc;
     }
