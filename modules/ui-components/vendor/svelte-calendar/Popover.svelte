@@ -1,5 +1,5 @@
 <script>
-    import { onMount, createEventDispatcher, tick } from "svelte";
+    import { onMount, onDestroy, createEventDispatcher, tick } from "svelte";
     const dispatch = createEventDispatcher();
     let once = (el, evt, cb) => {
         if (!el) {
@@ -40,15 +40,24 @@
         } while ((el = el.parentNode));
         close();
     }
+
     onMount(() => {
         document.addEventListener("click", checkForFocusLoss);
+
         if (!trigger) return;
+
         triggerContainer.appendChild(trigger.parentNode.removeChild(trigger));
+
         // eslint-disable-next-line
         return () => {
             document.removeEventListener("click", checkForFocusLoss);
         };
     });
+
+    onDestroy(() => {
+        document.removeEventListener("click", checkForFocusLoss);
+    });
+
     const getDistanceToEdges = async () => {
         if (!open) {
             open = true;
