@@ -107,6 +107,16 @@ class Preferences {
 
         return true;
     }
+
+    /**
+     * Validate the local DB by sending all the doc IDs to Koti Cloud server,
+     * which will return a list of invalid docs which we can then wipe out.
+     */
+    async validate() {
+        await this._db.validate();
+
+        return true;
+    }
 }
 
 /**

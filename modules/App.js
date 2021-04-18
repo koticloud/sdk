@@ -341,6 +341,7 @@ class App {
         try {
             await this.db.validate();
             await this.db.sync();
+            await this.prefs.validate();
             await this.prefs.sync();
         } catch (error) {
             console.error(error);
