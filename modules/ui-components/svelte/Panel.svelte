@@ -31,15 +31,15 @@
 </style>
 
 <div class="kc-component--panel" class:kc-component--default-style={defaultStyle}>
-    <div class="left">
+    <div class="left kc--noselect">
         <slot name="left"></slot>
     </div>
 
-    <div class="middle">
+    <div class="middle kc--noselect">
         <slot></slot>
     </div>
 
-    <div class="right">
+    <div class="right kc--noselect">
         <slot name="right"></slot>
     </div>
 </div>
