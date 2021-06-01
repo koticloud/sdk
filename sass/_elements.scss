@@ -27,8 +27,13 @@
     margin: auto;
     overflow: hidden;
 
-    display: flex;
+    display: none;
     flex-direction: column;
+
+    // When multiple dialogs are open - only show the last (topmost) one
+    &:last-of-type {
+        display: flex;
+    }
 }
 
 .kc--dialog {
