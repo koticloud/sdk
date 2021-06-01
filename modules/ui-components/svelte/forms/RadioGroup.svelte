@@ -13,11 +13,17 @@
 </script>
 
 <style lang="scss">
+:global(.kc-component--radiogroup .input) {
+    flex-direction: column;
+    align-items: flex-start !important;
+}
+
 :global(.kc-component--radiogroup) {
     .label {
         flex: 1;
         text-align: left;
         padding-right: 1rem;
+        margin-bottom: 1rem;
     }
 
     .value {
