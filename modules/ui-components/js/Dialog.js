@@ -337,11 +337,17 @@ class Dialog extends Component
      * @param {string} id 
      */
     close(id) {
-        this._overlay.removeChild(`.kc--dialog--wrapper[data-id="${id}"]`);
+        const selector = `.kc--dialog--wrapper[data-id="${id}"]`;
+
+        if (!this._overlay._el || !this._overlay._el.querySelector(selector)) {
+            return
+        }
+
+        this._overlay.removeChild(selector);
         
         this._openDialogsCount--;
 
-        if (this._openDialogsCount == 0) {
+        if (this._openDialogsCount === 0) {
             this._overlay.hide();
         }
     }
@@ -351,6 +357,8 @@ class Dialog extends Component
      */
     closeAll() {
         this._overlay.removeChildren();
+
+        this._openDialogsCount = 0;
     }
 }
 
