@@ -273,8 +273,10 @@ class DB
         if (type === 'multiple' || type === 'first') {
             if (options.query.collection) {
                 const key = sha256(JSON.stringify(options.query));
-    
-                this._cache[type][key] = Object.assign({}, options.data);
+
+                this._cache[type][key] = (options.data !== null && options.data !== undefined)
+                    ? Object.assign({}, options.data)
+                    : null;
             }
         }
     }
