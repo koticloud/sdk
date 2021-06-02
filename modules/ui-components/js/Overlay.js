@@ -49,11 +49,13 @@ class Overlay extends Component
         this._el.addEventListener('click', (e) => {
             // Only when clicking on the overlay element directly
             if (e.target === this._el) {
-                this._ui.emit('overlay-closed');
-    
-                this.removeChildren();
-    
-                this.hide();
+                this.removeLastChild();
+                
+                if (this._el.children.length === 0) {
+                    this._ui.emit('overlay-closed');
+
+                    this.hide();
+                }
             }
         });
     }
@@ -88,10 +90,12 @@ class Overlay extends Component
         }
     }
 
-    removeChildren() {
-        for (let child of this._el.children) {
-            this._el.removeChild(child);
+    removeLastChild() {
+        if (this._el.children.length === 0) {
+            return;
         }
+
+        this._el.removeChild(this._el.lastChild);
     }
 
     resetScroll() {
