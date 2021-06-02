@@ -10,16 +10,16 @@
     export let step = 1;
     export let rules = '';
     export let disabled = false;
-    export let className = 'kc-component--radiogroup';
+    export let className = 'kc-component--range';
 </script>
 
 <style lang="scss">
-:global(.kc-component--radiogroup .input) {
+:global(.kc-component--range .input) {
     flex-direction: column;
     align-items: flex-start !important;
 }
 
-:global(.kc-component--radiogroup) {
+:global(.kc-component--range) {
     .label {
         flex: 1;
         text-align: left;
