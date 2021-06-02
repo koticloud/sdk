@@ -98,6 +98,12 @@ class Overlay extends Component
         this._el.removeChild(this._el.lastChild);
     }
 
+    removeChildren() {
+        for (let child of this._el.children) {
+            this._el.removeChild(child);
+        }
+    }
+
     resetScroll() {
         this._el.scrollTo(0, 0);
     }
