@@ -13,6 +13,7 @@ import Select from './modules/ui-components/svelte/forms/Select.svelte';
 import Input from './modules/ui-components/svelte/forms/Input.svelte';
 import Switch from './modules/ui-components/svelte/forms/Switch.svelte';
 import RadioGroup from './modules/ui-components/svelte/forms/RadioGroup.svelte';
+import Range from './modules/ui-components/svelte/forms/Range.svelte';
 import Datepicker from './modules/ui-components/svelte/forms/Datepicker.svelte';
 import TagsInput from './modules/ui-components/svelte/forms/TagsInput.svelte';
 
@@ -34,4 +35,5 @@ export {
     Datepicker,
     TagsInput,
     Switch,
+    Range,
 };
