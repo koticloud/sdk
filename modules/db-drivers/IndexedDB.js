@@ -52,7 +52,7 @@ class IndexedDB extends DbDriver
         this._initCacheForDb();
 
         // Cache doc by ID
-        IndexedDB._cache[this._dbName]['byId'][data._id] = Object.assign({}, data);
+        IndexedDB._cache[this._dbName]['byId'][data._id] = JSON.parse(JSON.stringify(data));
 
         // Add doc's collection to the collections cache if it's not there yet
         this._addCollectionToCache(data._collection);
@@ -68,9 +68,9 @@ class IndexedDB extends DbDriver
             });
 
         if (cachedDocIndex !== -1) {
-            IndexedDB._cache[this._dbName]['byCollection'][collection][cachedDocIndex] = Object.assign({}, data);
+            IndexedDB._cache[this._dbName]['byCollection'][collection][cachedDocIndex] = JSON.parse(JSON.stringify(data));
         } else {
-            IndexedDB._cache[this._dbName]['byCollection'][collection].push(Object.assign({}, data));
+            IndexedDB._cache[this._dbName]['byCollection'][collection].push(JSON.parse(JSON.stringify(data)));
         }
     }
 
@@ -125,7 +125,7 @@ class IndexedDB extends DbDriver
 
     _getDocFromCache(id) {
         return IndexedDB._cache.hasOwnProperty(this._dbName) && IndexedDB._cache[this._dbName].hasOwnProperty('byId') && IndexedDB._cache[this._dbName]['byId'].hasOwnProperty(id)
-            ? Object.assign({}, IndexedDB._cache[this._dbName]['byId'][id])
+            ? JSON.parse(JSON.stringify(IndexedDB._cache[this._dbName]['byId'][id]))
             : null;
     }
 
@@ -316,7 +316,9 @@ class IndexedDB extends DbDriver
                 if (cached !== null && Array.isArray(cached)) {
                     results.docs = cached;
 
-                    return resolve(this._filterResults(Object.assign({}, results), query));
+                    return resolve(
+                        this._filterResults(JSON.parse(JSON.stringify(results)), query)
+                    );
                 }
             }
 
@@ -342,7 +344,9 @@ class IndexedDB extends DbDriver
                         this._cacheCollection(query.collection, results.docs);
                     }
 
-                    resolve(this._filterResults(Object.assign({}, results), query));
+                    resolve(
+                        this._filterResults(JSON.parse(JSON.stringify(results)), query)
+                    );
                 }
             }
 

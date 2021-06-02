@@ -275,7 +275,7 @@ class DB
                 const key = sha256(JSON.stringify(options.query));
 
                 this._cache[type][key] = (options.data !== null && options.data !== undefined)
-                    ? Object.assign({}, options.data)
+                    ? JSON.parse(JSON.stringify(options.data))
                     : null;
             }
         }
@@ -301,7 +301,7 @@ class DB
         }
 
         return key && this._cache[type][key]
-            ? Object.assign({}, this._cache[type][key])
+            ? JSON.parse(JSON.stringify(this._cache[type][key]))
             : null;
     }
 
