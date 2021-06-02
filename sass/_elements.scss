@@ -45,10 +45,16 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    // Add additional 1rem of padding on the right to accomodate the vertical
+    // scroll whenever it is visible
+    padding-right: 2rem;
 
     &--body {
         overflow-y: auto;
         flex: 1;
+        // Add additional 1rem of width to accomodate the vertical scroll
+        // whenever it is visible
+        width: calc(100% + 1rem);
     }
 
     &--buttons {

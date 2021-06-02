@@ -34,6 +34,7 @@
             flex-wrap: wrap;
 
             .radio {
+                white-space: nowrap;
                 margin-right: 1rem;
 
                 &:last-of-type {
@@ -51,7 +52,6 @@
         min-height: 2rem;
         display: flex;
         align-items: center;
-
 
         input {
             position: absolute;
@@ -118,7 +118,7 @@
     {#if label}
         <div class="label kc--no-select">{ label }</div>
     {/if}
-    
+
     <div class="value" class:inline={ inline }>
         {#each Object.keys(options) as key}
             <label class="radio" for="{name}-{key}">
