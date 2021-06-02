@@ -43,12 +43,6 @@
         }
     }
 
-    &.disabled {
-        .label, .value {
-            color: var(--kc-color--text-pale);
-        }
-    }
-
     .radio {
         display: block;
         position: relative;
@@ -91,6 +85,24 @@
         input:checked ~ .checkmark {
             background-color: var(--kc-color--success-green);
             border-color: var(--kc-color--success-green);
+        }
+    }
+
+    &.disabled {
+        .label, .value {
+            color: var(--kc-color--text-pale);
+        }
+
+        .radio {
+            .checkmark {
+                background-color: var(--kc-color--text-secondary);
+                border: 1px solid var(--kc-color--text-secondary);
+            }
+
+            input:checked ~ .checkmark {
+                background-color: var(--kc-color--text-pale);
+                border-color: var(--kc-color--text-pale);
+            }
         }
     }
 }
