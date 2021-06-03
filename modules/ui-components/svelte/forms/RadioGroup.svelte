@@ -121,9 +121,9 @@
 
     <div class="value" class:inline={ inline }>
         {#each Object.keys(options) as key}
-            <label class="radio" for="{name}-{key}">
+            <label class="radio" for="{name}_{key}">
                 <input type="radio"
-                    id="{name}-{key}"
+                    id="{name}_{key}"
                     name={ name }
                     value={ key }
                     bind:group={ value }>
