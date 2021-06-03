@@ -9,7 +9,7 @@ class Integer extends Rule
 
         const n = Math.floor(Number(value));
 
-        return n !== Infinity && String(n) === value;
+        return n !== Infinity && String(n) === String(value);
     }
 
     message() {
