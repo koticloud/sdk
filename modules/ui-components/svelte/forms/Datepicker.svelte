@@ -58,6 +58,7 @@
     disabled={disabled}
     bind:value={value}
     className={className + (disabled ? ' disabled' : '')}
+    on:changed
 >
     {#if label}
         <div class="label">{ label }</div>

@@ -77,6 +77,7 @@
     bind:value={value}
     className={className + (disabled ? ' disabled' : '')}
     on:click={showSelect}
+    on:changed
 >
     {#if label}
         <div class="label">{ label }</div>

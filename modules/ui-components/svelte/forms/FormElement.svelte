@@ -1,5 +1,5 @@
 <script>
-    import { getContext, onDestroy } from 'svelte';
+    import { getContext, onDestroy, createEventDispatcher } from 'svelte';
 
     export let className = '';
 
@@ -10,9 +10,12 @@
     export let disabled = false;
 
     let initialValue = null;
+    let previousValue = null;
     const setFormElement = getContext('setFormElement');
     const removeFormElement = getContext('removeFormElement');
     const errors = getContext('errors');
+
+    const dispatch = createEventDispatcher();
 
     $: {
         if (setFormElement) {
@@ -24,8 +27,17 @@
         }
     }
 
+    $: {
+        if (previousValue !== value) {
+            previousValue = value;
+
+            dispatch('changed');
+        }
+    }
+
     (() => {
         initialValue = value;
+        previousValue = value;
 
         if (setFormElement) {
             setFormElement(name, {
