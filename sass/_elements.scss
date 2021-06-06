@@ -58,6 +58,7 @@
     }
 
     &--buttons {
+        padding-left: 1rem;
         margin-top: 1rem;
         display: flex;
         justify-content: space-evenly;
@@ -92,6 +93,7 @@
     &--title {
         text-align: center;
         font-weight: 600;
+        padding-left: 1rem;
         margin-bottom: 1rem;
     }
 
